@@ -177,7 +177,7 @@ export function AddTransactionModal({ open, onOpenChange }: AddTransactionModalP
         notes: "",
       })
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       toast({
         title: "Error adding transaction",
         description: "Please try again",
