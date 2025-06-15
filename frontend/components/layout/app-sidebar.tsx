@@ -129,7 +129,7 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild isActive={pathname === item.url}>
                       <Link
                         href={item.url}
-                        className="flex items-center gap-3 px-3 py-2 rounded-lg transition-all hover:bg-accent/50"
+                        className="flex items-center gap-3 px-3 py-2 pl-4 rounded-lg transition-all hover:bg-accent/50"
                       >
                         <item.icon className="w-4 h-4" />
                         <span>{item.title}</span>

@@ -93,7 +93,7 @@ const categoryColors = {
 
 export function TransactionsList() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const selectedCategory = "All"
 
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch =

@@ -95,7 +95,7 @@ export function QuickActions() {
           <CardTitle>Quick Actions</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {quickActions.map((action, index) => (
+          {quickActions.map((action) => (
             <Button
               key={action.id}
               variant="ghost"
@@ -114,8 +114,8 @@ export function QuickActions() {
                   <action.icon className={`w-4 h-4 ${action.color}`} />
                 </div>
                 <div className="text-left flex-1">
-                  <p className="font-medium text-foreground">{action.title}</p>
-                  <p className="text-xs text-muted-foreground">{action.description}</p>
+                  <p className="font-medium text-foreground whitespace-normal">{action.title}</p>
+                  <p className="text-xs text-muted-foreground whitespace-normal">{action.description}</p>
                 </div>
               </div>
             </Button>

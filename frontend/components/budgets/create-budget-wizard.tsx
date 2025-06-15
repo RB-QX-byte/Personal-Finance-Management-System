@@ -263,7 +263,7 @@ export function CreateBudgetWizard({ open, onOpenChange }: CreateBudgetWizardPro
       setCurrentStep(1)
       setErrors({})
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       toast({
         title: "Error creating budget",
         description: "Please try again",
@@ -369,7 +369,7 @@ export function CreateBudgetWizard({ open, onOpenChange }: CreateBudgetWizardPro
                     </div>
                   </div>
                 ) : (
-                  filteredCategories.map((category, index) => {
+                  filteredCategories.map((category) => {
                     const isSelected = form.categories.includes(category.id)
 
                     return (
@@ -903,7 +903,7 @@ export function CreateBudgetWizard({ open, onOpenChange }: CreateBudgetWizardPro
                 aria-valuemin={1}
                 aria-valuemax={STEPS.length}
               >
-                {STEPS.map((step, index) => (
+                {STEPS.map((step) => (
                   <div
                     key={step.id}
                     className={cn(
