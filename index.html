@@ -422,6 +422,10 @@
         // --- INITIALIZATION ---
         
         async function initializeApp() {
+            if (!localStorage.getItem('loggedIn')) {
+                window.location.href = 'login.html';
+                return;
+            }
             state.transactions = mockApiData.transactions;
             state.budgets = mockApiData.budgets;
             state.accounts = mockApiData.accounts;
