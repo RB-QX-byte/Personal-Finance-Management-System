@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign Up - FinTrack</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 flex items-center justify-center h-screen">
+  <div class="bg-gray-800 p-6 rounded-lg w-full max-w-sm">
+    <h1 class="text-2xl font-bold mb-4 text-center text-white">Sign Up</h1>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-300" for="username">Username</label>
+        <input id="username" class="w-full p-2 rounded bg-gray-700 text-white" />
+      </div>
+      <div>
+        <label class="block text-sm text-gray-300" for="password">Password</label>
+        <input type="password" id="password" class="w-full p-2 rounded bg-gray-700 text-white" />
+      </div>
+      <button id="signup-btn" class="w-full bg-emerald-500 text-white py-2 rounded">Create Account</button>
+      <p class="text-center text-gray-400 text-sm">Already have an account? <a href="login.html" class="text-emerald-400">Login</a></p>
+    </div>
+  </div>
+  <script>
+    document.getElementById('signup-btn').addEventListener('click', async () => {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      if (res.ok) {
+        window.location.href = 'login.html';
+      } else {
+        alert('Signup failed');
+      }
+    });
+  </script>
+</body>
+</html>
