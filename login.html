@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login - FinTrack</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.js" integrity="sha384-7Im/1SI9OocPG6dpzrrttf367osKBpqZLKto9Z6lJiH0cpnNCblNzOmdgVkFcmpy" crossorigin="anonymous"></script>
 </head>
 <body class="bg-gray-900 flex items-center justify-center h-screen">
   <div class="bg-gray-800 p-6 rounded-lg w-full max-w-sm">
@@ -18,24 +18,39 @@
         <label class="block text-sm text-gray-300" for="password">Password</label>
         <input type="password" id="password" class="w-full p-2 rounded bg-gray-700 text-white" />
       </div>
+      <div id="login-error" class="text-red-400 text-sm"></div>
       <button id="login-btn" class="w-full bg-emerald-500 text-white py-2 rounded">Login</button>
       <p class="text-center text-gray-400 text-sm">No account? <a href="signup.html" class="text-emerald-400">Sign up</a></p>
     </div>
   </div>
   <script>
+    let csrfToken = '';
+    fetch('/api/csrf-token').then(r => r.json()).then(d => { csrfToken = d.csrfToken; });
+
     document.getElementById('login-btn').addEventListener('click', async () => {
-      const identifier = document.getElementById('identifier').value;
+      const identifier = document.getElementById('identifier').value.trim();
       const password = document.getElementById('password').value;
-      const res = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password })
-      });
-      if (res.ok) {
-        localStorage.setItem('loggedIn', 'true');
-        window.location.href = 'index.html';
-      } else {
-        alert('Login failed');
+      const errorEl = document.getElementById('login-error');
+      errorEl.textContent = '';
+      if (!identifier || !password) {
+        errorEl.textContent = 'All fields are required';
+        return;
+      }
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+          credentials: 'include',
+          body: JSON.stringify({ identifier, password })
+        });
+        if (res.ok) {
+          window.location.href = 'index.html';
+        } else {
+          const data = await res.json();
+          errorEl.textContent = data.error || 'Login failed';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Network error';
       }
     });
   </script>

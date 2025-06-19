@@ -6,13 +6,13 @@
     <title>Personal Finance Dashboard</title>
     
     <!-- Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.5/dist/tailwind.min.js" integrity="sha384-7Im/1SI9OocPG6dpzrrttf367osKBpqZLKto9Z6lJiH0cpnNCblNzOmdgVkFcmpy" crossorigin="anonymous"></script>
+
     <!-- Chart.js for data visualization -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
+
     <!-- Lucide Icons for UI elements -->
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.271.0/dist/umd/lucide.min.js" integrity="sha384-UpxSOKHixoksN3Ew1FDGDXS4vIidyc6cmuOa9F9Dahp3nrk56hBOp2U/84MyE0m0" crossorigin="anonymous"></script>
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,7 +37,7 @@
         .nav-link.active { background-color: #374151; /* bg-gray-700 */ color: #ffffff; font-weight: 600; }
         /* Simple toggle switch style */
         .toggle-checkbox:checked { right: 0; border-color: #10B981; }
-        .toggle-checkbox:checked + .toggle-label { background-color: #10B981; }
+        .toggle-checkbox:checked + div { background-color: #10B981; }
     </style>
 </head>
 <body class="flex h-screen">
@@ -299,7 +299,7 @@
                         </div>
                         <div class="card p-6">
                              <h3 class="text-xl font-semibold mb-4">Send us a Message</h3>
-                             <form class="space-y-4">
+                             <form id="contact-form" class="space-y-4">
                                 <div><label for="contact-name" class="text-sm font-medium text-gray-400">Name</label><input type="text" id="contact-name" class="mt-1 w-full bg-[#0A0A0A] border border-gray-600 p-2 rounded-lg"></div>
                                 <div><label for="contact-email" class="text-sm font-medium text-gray-400">Email</label><input type="email" id="contact-email" class="mt-1 w-full bg-[#0A0A0A] border border-gray-600 p-2 rounded-lg"></div>
                                 <div><label for="contact-message" class="text-sm font-medium text-gray-400">Message</label><textarea id="contact-message" rows="4" class="mt-1 w-full bg-[#0A0A0A] border border-gray-600 p-2 rounded-lg"></textarea></div>
@@ -309,6 +309,25 @@
                     </div>
                 </div>`;
             lucide.createIcons();
+            const form = document.getElementById('contact-form');
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = document.getElementById('contact-name').value.trim();
+                const email = document.getElementById('contact-email').value.trim();
+                const message = document.getElementById('contact-message').value.trim();
+                if (!name || !email || !message) return alert('All fields required');
+                try {
+                    await fetch('/api/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, message })
+                    });
+                    alert('Message sent');
+                    form.reset();
+                } catch (err) {
+                    alert('Failed to send');
+                }
+            });
         }
 
         function renderPlaceholderPage(pageTitle) {
@@ -401,7 +420,31 @@
             `;
         }
 
-        async function fetchAIInsight() { /* ... unchanged ... */ }
+        async function fetchAIInsight() {
+            const prompt = document.getElementById('ai-prompt').value.trim();
+            const buttonText = document.getElementById('ai-button-text');
+            const loader = document.getElementById('ai-loader');
+            const container = document.getElementById('ai-response-container');
+            container.style.display = 'none';
+            if (!prompt) return;
+            buttonText.textContent = 'Loading';
+            loader.classList.remove('hidden');
+            try {
+                const res = await fetch('/api/ai-insight', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await res.json();
+                container.textContent = data.answer || 'No insight available';
+            } catch (err) {
+                container.textContent = 'Failed to load insight';
+            } finally {
+                loader.classList.add('hidden');
+                buttonText.textContent = 'Get Insight';
+                container.style.display = 'block';
+            }
+        }
         
         // --- ROUTING & NAVIGATION ---
 
@@ -422,7 +465,8 @@
         // --- INITIALIZATION ---
         
         async function initializeApp() {
-            if (!localStorage.getItem('loggedIn')) {
+            const sessionRes = await fetch('/api/session', { credentials: 'include' });
+            if (!sessionRes.ok) {
                 window.location.href = 'login.html';
                 return;
             }
