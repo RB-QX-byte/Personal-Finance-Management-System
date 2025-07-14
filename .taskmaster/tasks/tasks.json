@@ -1,0 +1,184 @@
+{
+  "master": {
+    "tasks": [
+      {
+        "id": 11,
+        "title": "Initial Project Setup and Configuration",
+        "description": "Set up the foundational project structure including the Astro.js frontend, Go backend, and Supabase project. This includes initializing repositories, configuring environment variables, and establishing the basic connection between services.",
+        "details": "Based on PRD section 4.1. Create the Supabase project, initialize the Astro.js application, and set up a basic Go API server structure. Configure Supabase client libraries in both Astro and Go.",
+        "testStrategy": "Verify that the Astro.js frontend can run locally. Verify the Go backend can run locally. Confirm that both services can successfully connect to the Supabase project using the provided credentials.",
+        "priority": "high",
+        "dependencies": [],
+        "status": "pending",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Set Up User Database Schema",
+            "description": "Create the necessary database table(s) to store user information, including credentials and profile data.",
+            "dependencies": [],
+            "details": "The 'users' table should include columns for 'id' (primary key), 'username' (unique), 'email' (unique), 'password_hash' (string), 'created_at', and 'updated_at'. Use a database migration tool like Alembic or Flyway to manage schema changes.",
+            "status": "in-progress",
+            "testStrategy": "Verify the migration runs successfully. Manually inspect the database schema to confirm all columns and constraints are created correctly. Write a unit test to ensure the User model can be instantiated and saved to the database."
+          },
+          {
+            "id": 2,
+            "title": "Develop User Registration API Endpoint",
+            "description": "Create a public API endpoint (e.g., POST /api/users/register) that allows new users to create an account.",
+            "dependencies": [
+              1
+            ],
+            "details": "The endpoint must accept a username, email, and password. It should validate the input (e.g., password strength, valid email format), check for existing username/email, hash the password using bcrypt, and save the new user to the database. Return a success message or user object upon successful registration.",
+            "status": "pending",
+            "testStrategy": "Write integration tests to cover: successful registration, registration with a duplicate username, registration with a duplicate email, registration with an invalid email format, and registration with a weak password. Ensure passwords are not returned in the API response."
+          },
+          {
+            "id": 3,
+            "title": "Implement User Login and Session Management",
+            "description": "Create an API endpoint (e.g., POST /api/auth/login) for users to log in and receive an authentication token.",
+            "dependencies": [
+              1
+            ],
+            "details": "The endpoint should accept a username/email and a password. It will find the user in the database, compare the provided password with the stored hash, and if they match, generate a JSON Web Token (JWT). The JWT should contain the user ID and an expiration date. The token is returned to the client.",
+            "status": "pending",
+            "testStrategy": "Write integration tests for: successful login with correct credentials, failed login with incorrect password, and failed login with a non-existent user. Test that a valid JWT is returned on success. Write a unit test for the JWT generation and verification logic."
+          },
+          {
+            "id": 4,
+            "title": "Create Protected Routes Middleware",
+            "description": "Implement middleware to protect certain API endpoints, ensuring they can only be accessed by authenticated users.",
+            "dependencies": [
+              3
+            ],
+            "details": "The middleware will inspect the 'Authorization' header for a 'Bearer' token. It will then validate the JWT (check signature and expiration). If the token is valid, it will extract the user ID from the payload and attach the user object to the request. If the token is invalid or missing, it will return a 401 Unauthorized error.",
+            "status": "pending",
+            "testStrategy": "Write integration tests for a sample protected endpoint. Test that access is granted with a valid token. Test that access is denied with an invalid token, an expired token, and no token. Ensure the correct user information is available in the request context after successful authentication."
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Implement Core Database Schema in Supabase",
+        "description": "Define and create the core database tables in Supabase PostgreSQL as specified in the PRD. This includes tables for users, profiles, accounts, transactions, categories, and budgets.",
+        "details": "Follow the data model outlined in PRD section 4.3. Create SQL migration scripts for the `profiles`, `accounts`, `transactions`, `categories`, and `budgets` tables. Establish foreign key relationships and apply necessary constraints.",
+        "testStrategy": "Review the created schema in the Supabase dashboard. Run migration scripts successfully. Verify that table structures, relationships, and constraints match the design in the PRD.",
+        "priority": "high",
+        "dependencies": [
+          11
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 13,
+        "title": "Implement User Authentication and Authorization",
+        "description": "Develop the user authentication flow (sign-up, login, logout) using Supabase Auth. Implement Row Level Security (RLS) policies to ensure users can only access their own data.",
+        "details": "Based on PRD section 4.5. Create Astro.js API routes for handling authentication. Implement RLS policies on all user-specific tables (`accounts`, `transactions`, `budgets`, etc.) to restrict access based on `auth.uid()`.",
+        "testStrategy": "Unit tests for auth API routes. Manually test user registration and login. Create two separate user accounts and verify that one user cannot access the data of the other through API calls.",
+        "priority": "high",
+        "dependencies": [
+          12
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 14,
+        "title": "Develop Account Management (CRUD)",
+        "description": "Create the API endpoints and UI components for users to manage their financial accounts. This includes adding, viewing, editing, and deleting accounts (e.g., checking, savings, credit cards).",
+        "details": "Based on PRD section 3.1 (Account Aggregation). Create PostgREST API endpoints for the `accounts` table. Build Astro.js components for a form to add/edit an account and a list to display all accounts. This task focuses on manual account entry first.",
+        "testStrategy": "API tests for CRUD operations on the `/accounts` endpoint. UI tests to ensure a logged-in user can create a new account, see it in their list, update its details, and delete it.",
+        "priority": "high",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 15,
+        "title": "Develop Transaction Management (CRUD)",
+        "description": "Implement the functionality for users to add, view, edit, and delete individual transactions. Transactions must be linked to a specific user account and category.",
+        "details": "Based on PRD section 3.1 (Transaction Management). Create API endpoints and UI components for transaction CRUD. The UI should include a form for adding/editing transactions with fields for date, description, amount, and category.",
+        "testStrategy": "API tests for the `/transactions` endpoint. UI tests to add a transaction to an account, verify it appears in the transaction list, edit it, and delete it. Ensure transactions correctly affect account balances.",
+        "priority": "high",
+        "dependencies": [
+          14
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 16,
+        "title": "Implement Core Budgeting Tools",
+        "description": "Allow users to create and manage budgets for specific spending categories. The system should track spending against these budgets and provide visual feedback.",
+        "details": "Based on PRD section 3.1 (Budgeting Tools). Create API and UI for the `budgets` table. Users should be able to set a monthly amount for a category. The UI should display a list of budgets with progress bars showing spending vs. budgeted amount.",
+        "testStrategy": "API tests for budget CRUD. UI tests to create a budget for 'Groceries'. Add transactions in the 'Groceries' category and verify the budget progress bar updates correctly.",
+        "priority": "high",
+        "dependencies": [
+          15
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 17,
+        "title": "Design and Build Main Dashboard UI",
+        "description": "Create the main dashboard page that serves as the user's primary landing page after login. It should provide a high-level overview of their financial health.",
+        "details": "Based on PRD section 3.3. Use Astro.js and Tailwind CSS to build a clean, responsive dashboard layout. Initially, this will include placeholders for key components like Net Worth, Budget Summary, and Recent Transactions.",
+        "testStrategy": "Manual UI review across different screen sizes (desktop, tablet, mobile) to ensure responsiveness. Verify that navigation is intuitive and the layout is clean and uncluttered.",
+        "priority": "medium",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 18,
+        "title": "Implement Net Worth Tracker Component",
+        "description": "Develop the backend logic and frontend component to calculate and display the user's total net worth. This is calculated by summing the balances of all asset accounts and subtracting liabilities.",
+        "details": "Based on PRD section 3.1 (Net Worth Tracker). Create a Go API endpoint or a PostgreSQL RPC function exposed via PostgREST to calculate net worth. Develop a dashboard component in Astro.js to display this value.",
+        "testStrategy": "Unit test for the calculation logic. Manually add several asset and liability accounts and verify that the displayed net worth on the dashboard is calculated correctly.",
+        "priority": "medium",
+        "dependencies": [
+          14,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 19,
+        "title": "Implement Real-time Data Updates",
+        "description": "Integrate Supabase Realtime to provide live updates on the dashboard without requiring a page refresh. Changes to transactions or account balances should be reflected instantly.",
+        "details": "Based on PRD section 4.6. Use the Supabase JS client in the Astro.js frontend to subscribe to changes on the `transactions` and `accounts` tables. When a change is detected, re-fetch data or update the local state to refresh the UI.",
+        "testStrategy": "Open the app in two different browser windows. Add a transaction in one window and verify that the transaction list and account balance update automatically in the second window.",
+        "priority": "medium",
+        "dependencies": [
+          15,
+          17
+        ],
+        "status": "pending",
+        "subtasks": []
+      },
+      {
+        "id": 20,
+        "title": "Develop Goal Setting & Tracking Feature",
+        "description": "Implement the backend and frontend for users to create, track, and manage financial goals, such as saving for a vacation or paying off debt.",
+        "details": "Based on PRD section 3.2 (Advanced Features). Create the `goals` table, API, and UI components. Users should be able to define a goal with a name, target amount, and target date. The UI should show their progress towards the goal.",
+        "testStrategy": "API tests for goal CRUD. UI tests to create a savings goal, manually update the current amount, and verify that the progress visualization updates correctly.",
+        "priority": "low",
+        "dependencies": [
+          13
+        ],
+        "status": "pending",
+        "subtasks": []
+      }
+    ],
+    "metadata": {
+      "created": "2025-07-14T05:03:48.282Z",
+      "updated": "2025-07-14T05:14:56.800Z",
+      "description": "Tasks for master context"
+    }
+  }
+}
