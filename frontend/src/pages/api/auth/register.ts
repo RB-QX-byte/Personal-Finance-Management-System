@@ -79,13 +79,16 @@ export const POST: APIRoute = async ({ request }) => {
         }
       );
 
-      // Set secure HTTP-only cookies
-      response.headers.set('Set-Cookie', 
-        `sb-access-token=${data.session.access_token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${data.session.expires_in}`
+      // Set HTTP-only cookies (secure flag only in production)
+      const isProduction = import.meta.env.PROD;
+      const secureFlag = isProduction ? '; Secure' : '';
+      
+      response.headers.append('Set-Cookie', 
+        `sb-access-token=${data.session.access_token}; Path=/; HttpOnly${secureFlag}; SameSite=Lax; Max-Age=${data.session.expires_in}`
       );
 
-      response.headers.set('Set-Cookie', 
-        `sb-refresh-token=${data.session.refresh_token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}` // 30 days
+      response.headers.append('Set-Cookie', 
+        `sb-refresh-token=${data.session.refresh_token}; Path=/; HttpOnly${secureFlag}; SameSite=Lax; Max-Age=${30 * 24 * 60 * 60}` // 30 days
       );
 
       return response;

@@ -85,6 +85,10 @@ func main() {
 		reportsHandler = handlers.NewReportsHandler(dbService)
 		goalsHandler = handlers.NewGoalsHandler(dbService)
 	}
+	
+	// Initialize auth and notification handlers (no database required)
+	authHandler := handlers.NewAuthHandler()
+	notificationHandler := handlers.NewNotificationHandler()
 
 	// API routes group
 	api := r.Group("/api")
@@ -92,10 +96,37 @@ func main() {
 		// Health check for API
 		api.GET("/health", handlers.HealthCheck)
 
+		// Auth endpoints (public)
+		auth := api.Group("/auth")
+		{
+			auth.POST("/login", authHandler.Login)
+			auth.POST("/register", authHandler.Register)
+			auth.POST("/logout", authHandler.Logout)
+			auth.POST("/forgot-password", authHandler.ForgotPassword)
+			auth.POST("/reset-password", authHandler.ResetPassword)
+			auth.GET("/verify-reset-token", authHandler.VerifyResetToken)
+		}
+
 		// Protected routes group
 		protected := api.Group("/")
 		protected.Use(authMiddleware.RequireAuth())
 		{
+			// Auth profile endpoint (protected)
+			auth := protected.Group("/auth")
+			{
+				auth.GET("/profile", authHandler.Profile)
+			}
+
+			// Notifications endpoints
+			notifications := protected.Group("/notifications")
+			{
+				notifications.GET("/", notificationHandler.GetNotifications)
+				notifications.GET("/:id", notificationHandler.GetNotification)
+				notifications.PATCH("/:id", notificationHandler.UpdateNotification)
+				notifications.DELETE("/:id", notificationHandler.DeleteNotification)
+				notifications.POST("/actions", notificationHandler.HandleNotificationActions)
+			}
+
 			// Reports endpoints
 			if reportsHandler != nil {
 				reports := protected.Group("/reports")
