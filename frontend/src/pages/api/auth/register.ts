@@ -63,7 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     // If session exists (email confirmation disabled), set cookies and create profile
-    if (data.session) {
+    if (data.session && data.user) {
       // Create user profile in the database
       try {
         const { error: profileError } = await supabase
