@@ -1,0 +1,80 @@
+---
+// This component initializes real-time subscriptions for the authenticated user
+// It should be included in all authenticated pages
+
+export interface Props {
+  userId?: string;
+  initialData?: {
+    transactions?: any[];
+    accounts?: any[];
+    goals?: any[];
+    notifications?: any[];
+  };
+}
+
+const { userId, initialData } = Astro.props;
+---
+
+<!-- Real-time initialization component -->
+<script define:vars={{ userId, initialData }}>
+  // Import realtime manager and store initializer when the page loads
+  Promise.all([
+    import('/src/lib/realtimeManager.js'),
+    import('/src/lib/storeInitializer.js')
+  ]).then(([{ realtimeManager }, { storeInitializer }]) => {
+    // Wait for DOM to be ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => {
+        initializeRealtime();
+      });
+    } else {
+      initializeRealtime();
+    }
+
+    function initializeRealtime() {
+      // Initialize stores with initial data if provided
+      if (initialData) {
+        storeInitializer.initializeWithData(initialData);
+        console.log('✅ Stores initialized with initial data');
+      }
+      
+      // Initialize real-time subscriptions
+      realtimeManager.initialize(userId);
+      
+      // Clean up on page unload
+      const cleanup = () => {
+        realtimeManager.cleanup();
+      };
+      
+      window.addEventListener('beforeunload', cleanup);
+      window.addEventListener('pagehide', cleanup);
+      
+      console.log('✅ Real-time provider initialized');
+    }
+  }).catch(error => {
+    console.error('Failed to initialize real-time provider:', error);
+  });
+</script>
+
+<!-- Visual indicator for real-time status (optional) -->
+<div id="realtime-status" class="fixed bottom-4 left-4 z-40 opacity-0 transition-opacity duration-300">
+  <div class="bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium flex items-center space-x-2">
+    <div class="w-2 h-2 bg-green-300 rounded-full animate-pulse"></div>
+    <span>Real-time connected</span>
+  </div>
+</div>
+
+<script>
+  // Show connection status temporarily
+  setTimeout(() => {
+    const statusElement = document.getElementById('realtime-status');
+    if (statusElement) {
+      statusElement.classList.remove('opacity-0');
+      
+      // Hide after 3 seconds
+      setTimeout(() => {
+        statusElement.classList.add('opacity-0');
+      }, 3000);
+    }
+  }, 1000);
+</script>

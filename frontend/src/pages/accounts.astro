@@ -1,0 +1,650 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<Layout title="Accounts - Personal Finance Manager">
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Accounts</h1>
+            <p class="text-sm text-gray-600 mt-1">Manage your financial accounts</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button 
+              id="add-account-btn"
+              class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Add Account
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accounts Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+        <p class="text-gray-600 mt-2">Loading accounts...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No accounts yet</h3>
+          <p class="text-gray-600 mb-4">Get started by adding your first financial account</p>
+          <button 
+            id="add-first-account-btn"
+            class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          >
+            Add Your First Account
+          </button>
+        </div>
+      </div>
+
+      <!-- Accounts Grid -->
+      <div id="accounts-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Account cards will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Container -->
+  <div id="modal-container"></div>
+</Layout>
+
+<script>
+  interface Account {
+    id: string;
+    name: string;
+    account_type: string;
+    balance: number;
+    description?: string;
+    created_at: string;
+    updated_at: string;
+  }
+
+  let accounts: Account[] = [];
+
+  const loadingState = document.getElementById('loading-state');
+  const emptyState = document.getElementById('empty-state');
+  const accountsGrid = document.getElementById('accounts-grid');
+  const addAccountBtn = document.getElementById('add-account-btn');
+  const addFirstAccountBtn = document.getElementById('add-first-account-btn');
+  const modalContainer = document.getElementById('modal-container');
+
+  function getAccountIcon(type: string): string {
+    switch (type) {
+      case 'checking':
+        return 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10';
+      case 'savings':
+        return 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16l-3-9';
+      case 'credit_card':
+        return 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z';
+      case 'investment':
+        return 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z';
+      case 'loan':
+        return 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1';
+      default:
+        return 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10';
+    }
+  }
+
+  function getAccountTypeLabel(type: string): string {
+    switch (type) {
+      case 'checking':
+        return 'Checking';
+      case 'savings':
+        return 'Savings';
+      case 'credit_card':
+        return 'Credit Card';
+      case 'investment':
+        return 'Investment';
+      case 'loan':
+        return 'Loan';
+      default:
+        return 'Other';
+    }
+  }
+
+  function getBalanceColor(balance: number): string {
+    if (balance < 0) return 'text-red-600';
+    if (balance > 1000) return 'text-green-600';
+    return 'text-gray-900';
+  }
+
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  }
+
+  function renderAccountCard(account: Account): string {
+    return `
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-12 h-12 bg-primary-50 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${getAccountIcon(account.account_type)}"></path>
+              </svg>
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900">${account.name}</h3>
+              <p class="text-sm text-gray-600">${getAccountTypeLabel(account.account_type)}</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="text-2xl font-bold ${getBalanceColor(account.balance)}">${formatCurrency(account.balance)}</p>
+          </div>
+        </div>
+        
+        ${account.description ? `
+          <p class="text-sm text-gray-600 mb-4">${account.description}</p>
+        ` : ''}
+        
+        <div class="flex justify-end space-x-2">
+          <button 
+            class="edit-account-btn text-sm text-primary-600 hover:text-primary-700 font-medium"
+            data-account-id="${account.id}"
+          >
+            Edit
+          </button>
+          <button 
+            class="delete-account-btn text-sm text-red-600 hover:text-red-700 font-medium"
+            data-account-id="${account.id}"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAccounts() {
+    if (!accountsGrid) return;
+
+    if (accounts.length === 0) {
+      showEmptyState();
+      return;
+    }
+
+    accountsGrid.innerHTML = accounts.map(renderAccountCard).join('');
+    
+    // Add event listeners to edit and delete buttons
+    document.querySelectorAll('.edit-account-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const accountId = (e.target as HTMLElement).dataset.accountId;
+        if (accountId) {
+          editAccount(accountId);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-account-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const accountId = (e.target as HTMLElement).dataset.accountId;
+        if (accountId) {
+          deleteAccount(accountId);
+        }
+      });
+    });
+
+    showAccountsGrid();
+  }
+
+  function showLoadingState() {
+    loadingState?.classList.remove('hidden');
+    emptyState?.classList.add('hidden');
+    accountsGrid?.classList.add('hidden');
+  }
+
+  function showEmptyState() {
+    loadingState?.classList.add('hidden');
+    emptyState?.classList.remove('hidden');
+    accountsGrid?.classList.add('hidden');
+  }
+
+  function showAccountsGrid() {
+    loadingState?.classList.add('hidden');
+    emptyState?.classList.add('hidden');
+    accountsGrid?.classList.remove('hidden');
+  }
+
+  async function loadAccounts() {
+    showLoadingState();
+    
+    try {
+      const response = await fetch('/api/accounts');
+      if (response.ok) {
+        accounts = await response.json();
+        renderAccounts();
+      } else {
+        console.error('Failed to load accounts');
+        showEmptyState();
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+      showEmptyState();
+    }
+  }
+
+  async function showAddAccountModal() {
+    if (modalContainer) {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="add-account-modal">
+          <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Add New Account</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" id="close-modal">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <form id="add-account-form" class="space-y-4">
+                <div>
+                  <label for="account-name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="account-name"
+                    name="name"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g., Main Checking"
+                  />
+                </div>
+
+                <div>
+                  <label for="account-type" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account Type *
+                  </label>
+                  <select
+                    id="account-type"
+                    name="account_type"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select account type</option>
+                    <option value="checking">Checking</option>
+                    <option value="savings">Savings</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="investment">Investment</option>
+                    <option value="loan">Loan</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="account-balance" class="block text-sm font-medium text-gray-700 mb-1">
+                    Initial Balance
+                  </label>
+                  <input
+                    type="number"
+                    id="account-balance"
+                    name="balance"
+                    step="0.01"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label for="account-description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="account-description"
+                    name="description"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Additional notes about this account..."
+                  ></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    id="cancel-btn"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+                  >
+                    Add Account
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add event listeners for the modal
+      const modal = document.getElementById('add-account-modal');
+      const form = document.getElementById('add-account-form') as HTMLFormElement;
+      const closeBtn = document.getElementById('close-modal');
+      const cancelBtn = document.getElementById('cancel-btn');
+
+      function closeModal() {
+        modal?.remove();
+      }
+
+      function showError(message: string) {
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+          existingError.remove();
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.textContent = message;
+        form.insertBefore(errorDiv, form.firstChild);
+      }
+
+      function showSuccess(message: string) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+        successDiv.textContent = message;
+        form.insertBefore(successDiv, form.firstChild);
+      }
+
+      closeBtn?.addEventListener('click', closeModal);
+      cancelBtn?.addEventListener('click', closeModal);
+
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+          name: formData.get('name') as string,
+          account_type: formData.get('account_type') as string,
+          balance: formData.get('balance') as string,
+          description: formData.get('description') as string,
+        };
+
+        try {
+          const response = await fetch('/api/accounts', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const account = await response.json();
+            showSuccess('Account added successfully!');
+            
+            // Update accounts list
+            accounts.push(account);
+            renderAccounts();
+            
+            setTimeout(() => {
+              closeModal();
+            }, 1000);
+          } else {
+            const errorText = await response.text();
+            showError(errorText || 'Failed to add account');
+          }
+        } catch (error) {
+          console.error('Error adding account:', error);
+          showError('An unexpected error occurred. Please try again.');
+        }
+      });
+    }
+  }
+
+  function editAccount(accountId: string) {
+    const account = accounts.find(acc => acc.id === accountId);
+    if (!account) return;
+
+    if (modalContainer) {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="edit-account-modal">
+          <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Edit Account</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" id="close-edit-modal">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <form id="edit-account-form" class="space-y-4">
+                <div>
+                  <label for="edit-account-name" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-account-name"
+                    name="name"
+                    value="${account.name}"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="e.g., Main Checking"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-account-type" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account Type *
+                  </label>
+                  <select
+                    id="edit-account-type"
+                    name="account_type"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="checking" ${account.account_type === 'checking' ? 'selected' : ''}>Checking</option>
+                    <option value="savings" ${account.account_type === 'savings' ? 'selected' : ''}>Savings</option>
+                    <option value="credit_card" ${account.account_type === 'credit_card' ? 'selected' : ''}>Credit Card</option>
+                    <option value="investment" ${account.account_type === 'investment' ? 'selected' : ''}>Investment</option>
+                    <option value="loan" ${account.account_type === 'loan' ? 'selected' : ''}>Loan</option>
+                    <option value="other" ${account.account_type === 'other' ? 'selected' : ''}>Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="edit-account-balance" class="block text-sm font-medium text-gray-700 mb-1">
+                    Balance
+                  </label>
+                  <input
+                    type="number"
+                    id="edit-account-balance"
+                    name="balance"
+                    value="${account.balance}"
+                    step="0.01"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-account-description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    id="edit-account-description"
+                    name="description"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Additional notes about this account..."
+                  >${account.description || ''}</textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    id="cancel-edit-btn"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+                  >
+                    Update Account
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Add event listeners for the edit modal
+      const modal = document.getElementById('edit-account-modal');
+      const form = document.getElementById('edit-account-form') as HTMLFormElement;
+      const closeBtn = document.getElementById('close-edit-modal');
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+
+      function closeModal() {
+        modal?.remove();
+      }
+
+      function showError(message: string) {
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+          existingError.remove();
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.textContent = message;
+        form.insertBefore(errorDiv, form.firstChild);
+      }
+
+      function showSuccess(message: string) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+        successDiv.textContent = message;
+        form.insertBefore(successDiv, form.firstChild);
+      }
+
+      closeBtn?.addEventListener('click', closeModal);
+      cancelBtn?.addEventListener('click', closeModal);
+
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+          id: accountId,
+          name: formData.get('name') as string,
+          account_type: formData.get('account_type') as string,
+          balance: formData.get('balance') as string,
+          description: formData.get('description') as string,
+        };
+
+        try {
+          const response = await fetch('/api/accounts', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const updatedAccount = await response.json();
+            showSuccess('Account updated successfully!');
+            
+            // Update accounts list
+            const index = accounts.findIndex(acc => acc.id === accountId);
+            if (index !== -1) {
+              accounts[index] = updatedAccount;
+              renderAccounts();
+            }
+            
+            setTimeout(() => {
+              closeModal();
+            }, 1000);
+          } else {
+            const errorText = await response.text();
+            showError(errorText || 'Failed to update account');
+          }
+        } catch (error) {
+          console.error('Error updating account:', error);
+          showError('An unexpected error occurred. Please try again.');
+        }
+      });
+    }
+  }
+
+  function deleteAccount(accountId: string) {
+    const account = accounts.find(acc => acc.id === accountId);
+    if (!account) return;
+
+    if (confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
+      fetch(`/api/accounts?id=${accountId}`, {
+        method: 'DELETE',
+      })
+      .then(response => {
+        if (response.ok) {
+          // Remove account from local array
+          accounts = accounts.filter(acc => acc.id !== accountId);
+          renderAccounts();
+        } else {
+          alert('Failed to delete account. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting account:', error);
+        alert('An error occurred while deleting the account.');
+      });
+    }
+  }
+
+  // Event listeners
+  addAccountBtn?.addEventListener('click', showAddAccountModal);
+  addFirstAccountBtn?.addEventListener('click', showAddAccountModal);
+
+  // Listen for account added event
+  window.addEventListener('accountAdded', (e) => {
+    const newAccount = (e as CustomEvent).detail;
+    accounts.push(newAccount);
+    renderAccounts();
+  });
+
+  // Load accounts on page load
+  loadAccounts();
+</script>

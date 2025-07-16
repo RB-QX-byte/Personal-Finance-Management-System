@@ -1,0 +1,402 @@
+---
+export interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<div class={`notification-bell relative ${className}`}>
+  <!-- Notification Bell Button -->
+  <button 
+    id="notification-bell"
+    class="relative p-2 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md transition-colors"
+    aria-label="Show notifications"
+  >
+    <!-- Bell Icon -->
+    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+    </svg>
+    
+    <!-- Unread Count Badge -->
+    <span 
+      id="notification-count" 
+      class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium hidden"
+    >
+      0
+    </span>
+  </button>
+
+  <!-- Notification Dropdown -->
+  <div 
+    id="notification-dropdown" 
+    class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 hidden"
+  >
+    <!-- Dropdown Header -->
+    <div class="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-gray-900">Notifications</h3>
+      <button 
+        id="mark-all-read"
+        class="text-sm text-primary-600 hover:text-primary-700 font-medium"
+      >
+        Mark all read
+      </button>
+    </div>
+
+    <!-- Notifications List -->
+    <div id="notifications-list" class="max-h-96 overflow-y-auto">
+      <!-- Loading state -->
+      <div id="notifications-loading" class="px-4 py-8 text-center text-gray-500">
+        <svg class="animate-spin h-6 w-6 mx-auto mb-2" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Loading notifications...
+      </div>
+
+      <!-- Empty state -->
+      <div id="notifications-empty" class="px-4 py-8 text-center text-gray-500 hidden">
+        <svg class="h-12 w-12 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <p class="text-sm">No notifications yet</p>
+      </div>
+
+      <!-- Notifications will be inserted here -->
+      <div id="notifications-container"></div>
+    </div>
+
+    <!-- Dropdown Footer -->
+    <div class="px-4 py-3 border-t border-gray-200">
+      <a 
+        href="/notifications" 
+        class="block text-center text-sm text-primary-600 hover:text-primary-700 font-medium"
+      >
+        View all notifications
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { notificationsStore, unreadNotificationsCount } from '../lib/store';
+  import type { Notification } from '../lib/types';
+
+  class NotificationBell {
+    private bellButton: HTMLElement | null = null;
+    private dropdown: HTMLElement | null = null;
+    private countBadge: HTMLElement | null = null;
+    private notificationsList: HTMLElement | null = null;
+    private notificationsContainer: HTMLElement | null = null;
+    private loadingElement: HTMLElement | null = null;
+    private emptyElement: HTMLElement | null = null;
+    private markAllReadButton: HTMLElement | null = null;
+
+    constructor() {
+      this.initializeElements();
+      this.bindEvents();
+      this.subscribeToStore();
+      this.loadNotifications();
+    }
+
+    private initializeElements(): void {
+      this.bellButton = document.getElementById('notification-bell');
+      this.dropdown = document.getElementById('notification-dropdown');
+      this.countBadge = document.getElementById('notification-count');
+      this.notificationsList = document.getElementById('notifications-list');
+      this.notificationsContainer = document.getElementById('notifications-container');
+      this.loadingElement = document.getElementById('notifications-loading');
+      this.emptyElement = document.getElementById('notifications-empty');
+      this.markAllReadButton = document.getElementById('mark-all-read');
+    }
+
+    private bindEvents(): void {
+      // Toggle dropdown on bell click
+      this.bellButton?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown();
+      });
+
+      // Mark all as read
+      this.markAllReadButton?.addEventListener('click', () => {
+        this.markAllAsRead();
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (event) => {
+        const target = event.target as HTMLElement;
+        const bellContainer = document.querySelector('.notification-bell');
+        
+        if (bellContainer && !bellContainer.contains(target)) {
+          this.closeDropdown();
+        }
+      });
+
+      // Close dropdown on escape key
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          this.closeDropdown();
+        }
+      });
+    }
+
+    private subscribeToStore(): void {
+      // Subscribe to unread count changes
+      unreadNotificationsCount.subscribe((count) => {
+        this.updateUnreadCount(count);
+      });
+
+      // Subscribe to notifications changes
+      notificationsStore.subscribe((notifications) => {
+        this.renderNotifications(notifications);
+      });
+    }
+
+    private updateUnreadCount(count: number): void {
+      if (!this.countBadge) return;
+
+      if (count > 0) {
+        this.countBadge.textContent = count > 99 ? '99+' : count.toString();
+        this.countBadge.classList.remove('hidden');
+      } else {
+        this.countBadge.classList.add('hidden');
+      }
+    }
+
+    private toggleDropdown(): void {
+      if (!this.dropdown) return;
+
+      const isHidden = this.dropdown.classList.contains('hidden');
+      
+      if (isHidden) {
+        this.openDropdown();
+      } else {
+        this.closeDropdown();
+      }
+    }
+
+    private openDropdown(): void {
+      if (!this.dropdown) return;
+      
+      this.dropdown.classList.remove('hidden');
+      this.dropdown.classList.add('animate-fade-in');
+      
+      // Load fresh notifications when opening
+      this.loadNotifications();
+    }
+
+    private closeDropdown(): void {
+      if (!this.dropdown) return;
+      
+      this.dropdown.classList.add('hidden');
+      this.dropdown.classList.remove('animate-fade-in');
+    }
+
+    private async loadNotifications(): Promise<void> {
+      try {
+        const response = await fetch('/api/notifications?limit=20');
+        if (!response.ok) throw new Error('Failed to fetch notifications');
+        
+        const data = await response.json();
+        
+        // Update store with fresh notifications
+        notificationsStore.set(data.notifications || []);
+        
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+        this.showError('Failed to load notifications');
+      }
+    }
+
+    private renderNotifications(notifications: Notification[]): void {
+      if (!this.notificationsContainer || !this.loadingElement || !this.emptyElement) return;
+
+      // Hide loading state
+      this.loadingElement.classList.add('hidden');
+
+      if (notifications.length === 0) {
+        this.emptyElement.classList.remove('hidden');
+        this.notificationsContainer.innerHTML = '';
+        return;
+      }
+
+      this.emptyElement.classList.add('hidden');
+
+      // Render notifications
+      this.notificationsContainer.innerHTML = notifications
+        .slice(0, 10) // Show only first 10 in dropdown
+        .map(notification => this.createNotificationElement(notification))
+        .join('');
+
+      // Bind click events for individual notifications
+      this.bindNotificationEvents();
+    }
+
+    private createNotificationElement(notification: Notification): string {
+      const isUnread = !notification.is_read;
+      const timeAgo = this.getTimeAgo(new Date(notification.created_at));
+      const icon = this.getNotificationIcon(notification.type);
+
+      return `
+        <div 
+          class="notification-item px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${isUnread ? 'bg-blue-50' : ''}"
+          data-notification-id="${notification.id}"
+        >
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0 mt-1">
+              <span class="text-lg">${icon}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between">
+                <h4 class="text-sm font-medium text-gray-900 truncate">
+                  ${notification.title}
+                </h4>
+                ${isUnread ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+              </div>
+              <p class="text-sm text-gray-600 mt-1 line-clamp-2">
+                ${notification.message}
+              </p>
+              <p class="text-xs text-gray-500 mt-1">
+                ${timeAgo}
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    private getNotificationIcon(type: string): string {
+      switch (type) {
+        case 'budget_alert':
+          return '⚠️';
+        case 'goal_milestone':
+          return '🎯';
+        case 'transaction_alert':
+          return '💰';
+        default:
+          return 'ℹ️';
+      }
+    }
+
+    private getTimeAgo(date: Date): string {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
+      
+      return date.toLocaleDateString();
+    }
+
+    private bindNotificationEvents(): void {
+      const notificationItems = this.notificationsContainer?.querySelectorAll('.notification-item');
+      
+      notificationItems?.forEach(item => {
+        item.addEventListener('click', (e) => {
+          const notificationId = (e.currentTarget as HTMLElement).dataset.notificationId;
+          if (notificationId) {
+            this.markAsRead(notificationId);
+          }
+        });
+      });
+    }
+
+    private async markAsRead(notificationId: string): Promise<void> {
+      try {
+        const response = await fetch(`/api/notifications/${notificationId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ is_read: true }),
+        });
+
+        if (!response.ok) throw new Error('Failed to mark notification as read');
+
+        // Update store
+        notificationsStore.update(notifications => 
+          notifications.map(n => 
+            n.id === notificationId ? { ...n, is_read: true } : n
+          )
+        );
+
+      } catch (error) {
+        console.error('Failed to mark notification as read:', error);
+      }
+    }
+
+    private async markAllAsRead(): Promise<void> {
+      try {
+        const response = await fetch('/api/notifications/actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ action: 'mark_all_read' }),
+        });
+
+        if (!response.ok) throw new Error('Failed to mark all notifications as read');
+
+        // Update store
+        notificationsStore.update(notifications => 
+          notifications.map(n => ({ ...n, is_read: true }))
+        );
+
+      } catch (error) {
+        console.error('Failed to mark all notifications as read:', error);
+      }
+    }
+
+    private showError(message: string): void {
+      if (!this.notificationsContainer) return;
+      
+      this.loadingElement?.classList.add('hidden');
+      this.emptyElement?.classList.add('hidden');
+      
+      this.notificationsContainer.innerHTML = `
+        <div class="px-4 py-8 text-center text-red-500">
+          <svg class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p class="text-sm">${message}</p>
+        </div>
+      `;
+    }
+  }
+
+  // Initialize when DOM is loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new NotificationBell());
+  } else {
+    new NotificationBell();
+  }
+</script>
+
+<style>
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

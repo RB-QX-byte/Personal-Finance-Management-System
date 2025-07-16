@@ -1,0 +1,117 @@
+---
+export interface Props {
+  assets?: number;
+  liabilities?: number;
+  currency?: string;
+}
+
+const { 
+  assets = 12500, 
+  liabilities = 5200, 
+  currency = '$' 
+} = Astro.props;
+
+const netWorth = assets - liabilities;
+const netWorthColor = netWorth >= 0 ? 'text-success-600' : 'text-danger-600';
+---
+
+<div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Net Worth Tracker</h3>
+    <div class="flex items-center space-x-2">
+      <span class="text-xs text-gray-500">Last updated: Today</span>
+      <button class="text-gray-400 hover:text-gray-600">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+  
+  <!-- Net Worth Chart Placeholder -->
+  <div class="mb-6">
+    <div class="h-40 bg-gradient-to-br from-primary-50 to-primary-100 rounded-lg flex items-center justify-center relative overflow-hidden">
+      <!-- Mock chart background -->
+      <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+      
+      <!-- Chart placeholder content -->
+      <div class="text-center z-10">
+        <div class="w-16 h-16 mx-auto mb-3 bg-primary-200 rounded-full flex items-center justify-center">
+          <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+          </svg>
+        </div>
+        <p class="text-sm text-gray-600">Interactive Chart</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Net Worth Summary -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Assets -->
+    <div class="text-center p-4 bg-success-50 rounded-lg border border-success-200">
+      <div class="flex items-center justify-center mb-2">
+        <svg class="w-5 h-5 text-success-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
+        </svg>
+        <span class="text-sm font-medium text-success-700">Assets</span>
+      </div>
+      <p class="text-2xl font-bold text-success-600">{currency}{assets.toLocaleString()}</p>
+      <p class="text-xs text-success-600 mt-1">+2.5% from last month</p>
+    </div>
+    
+    <!-- Liabilities -->
+    <div class="text-center p-4 bg-danger-50 rounded-lg border border-danger-200">
+      <div class="flex items-center justify-center mb-2">
+        <svg class="w-5 h-5 text-danger-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 13l-5 5m0 0l-5-5m5 5V6"></path>
+        </svg>
+        <span class="text-sm font-medium text-danger-700">Liabilities</span>
+      </div>
+      <p class="text-2xl font-bold text-danger-600">{currency}{liabilities.toLocaleString()}</p>
+      <p class="text-xs text-danger-600 mt-1">-1.2% from last month</p>
+    </div>
+    
+    <!-- Net Worth -->
+    <div class="text-center p-4 bg-primary-50 rounded-lg border border-primary-200">
+      <div class="flex items-center justify-center mb-2">
+        <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+        </svg>
+        <span class="text-sm font-medium text-primary-700">Net Worth</span>
+      </div>
+      <p class={`text-2xl font-bold ${netWorthColor}`}>{currency}{netWorth.toLocaleString()}</p>
+      <p class="text-xs text-primary-600 mt-1">+4.1% from last month</p>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="mt-6 flex flex-col sm:flex-row gap-3">
+    <button class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors">
+      Update Assets
+    </button>
+    <button class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-medium transition-colors">
+      View Details
+    </button>
+  </div>
+</div>
+
+<style>
+  /* Add subtle animations */
+  .bg-gradient-to-br {
+    background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
+  }
+  
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+</style>

@@ -1,0 +1,151 @@
+---
+export interface Props {
+  budgetTracking?: Array<{
+    budget_id: string;
+    budget_name: string;
+    category_name: string;
+    category_color: string;
+    category_icon: string;
+    budgeted_amount: number;
+    spent_amount: number;
+    remaining_amount: number;
+    percentage_used: number;
+    status: 'under_budget' | 'on_track' | 'over_budget';
+    period: string;
+  }>;
+  currency?: string;
+}
+
+const { 
+  budgetTracking = [],
+  currency = '$'
+} = Astro.props;
+
+const getProgressColor = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'bg-red-500';
+    case 'on_track':
+      return 'bg-yellow-500';
+    case 'under_budget':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-300';
+  }
+};
+
+const getProgressPercentage = (percentage: number) => {
+  return Math.min(percentage, 100);
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'Over budget';
+    case 'on_track':
+      return 'On track';
+    case 'under_budget':
+      return 'Under budget';
+    default:
+      return 'No data';
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'text-red-600';
+    case 'on_track':
+      return 'text-yellow-600';
+    case 'under_budget':
+      return 'text-green-600';
+    default:
+      return 'text-gray-600';
+  }
+};
+
+const totalSpent = budgetTracking.reduce((sum, budget) => sum + budget.spent_amount, 0);
+const totalLimit = budgetTracking.reduce((sum, budget) => sum + budget.budgeted_amount, 0);
+---
+
+<div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="text-lg font-semibold text-gray-900">Budget Overview</h3>
+    <a href="/budgets" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+      Manage
+    </a>
+  </div>
+  
+  <!-- Overall Progress -->
+  <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+    <div class="flex justify-between items-center mb-2">
+      <span class="text-sm font-medium text-gray-700">Total Monthly Budget</span>
+      <span class="text-sm text-gray-600">{currency}{totalSpent.toLocaleString()} / {currency}{totalLimit.toLocaleString()}</span>
+    </div>
+    <div class="w-full bg-gray-200 rounded-full h-3">
+      <div 
+        class={`h-3 rounded-full transition-all duration-300 ${getProgressColor(totalLimit > 0 && totalSpent > totalLimit ? 'over_budget' : totalLimit > 0 && (totalSpent / totalLimit) >= 0.8 ? 'on_track' : 'under_budget')}`}
+        style={`width: ${getProgressPercentage(totalLimit > 0 ? (totalSpent / totalLimit) * 100 : 0)}%`}
+      ></div>
+    </div>
+    <div class="flex justify-between items-center mt-2">
+      <span class={`text-xs font-medium ${getStatusColor(totalLimit > 0 && totalSpent > totalLimit ? 'over_budget' : totalLimit > 0 && (totalSpent / totalLimit) >= 0.8 ? 'on_track' : 'under_budget')}`}>
+        {getStatusText(totalLimit > 0 && totalSpent > totalLimit ? 'over_budget' : totalLimit > 0 && (totalSpent / totalLimit) >= 0.8 ? 'on_track' : 'under_budget')}
+      </span>
+      <span class="text-xs text-gray-500">
+        {currency}{(totalLimit - totalSpent).toLocaleString()} remaining
+      </span>
+    </div>
+  </div>
+  
+  <!-- Individual Budget Items -->
+  <div class="space-y-4">
+    {budgetTracking.slice(0, 4).map((budget) => (
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-medium text-gray-700">{budget.category_name}</span>
+            {budget.category_icon && (
+              <span class="text-xs">{budget.category_icon}</span>
+            )}
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-sm text-gray-600">
+              {currency}{budget.spent_amount.toLocaleString()} / {currency}{budget.budgeted_amount.toLocaleString()}
+            </span>
+            <span class={`text-xs font-medium ${getStatusColor(budget.status)}`}>
+              {Math.round(getProgressPercentage(budget.percentage_used))}%
+            </span>
+          </div>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            class={`h-2 rounded-full transition-all duration-300 ${getProgressColor(budget.status)}`}
+            style={`width: ${getProgressPercentage(budget.percentage_used)}%`}
+          ></div>
+        </div>
+      </div>
+    ))}
+  </div>
+  
+  {budgetTracking.length === 0 && (
+    <div class="text-center py-8">
+      <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+      <p class="text-gray-500 text-sm">No budgets set up yet</p>
+      <a href="/budgets" class="mt-3 text-primary-600 hover:text-primary-700 text-sm font-medium">
+        Create your first budget
+      </a>
+    </div>
+  )}
+  
+  <div class="mt-6 pt-4 border-t border-gray-200 flex space-x-3">
+    <a href="/budgets" class="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors text-center">
+      Add Budget
+    </a>
+    <a href="/budgets" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-medium transition-colors text-center">
+      View All
+    </a>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+---
+import NotificationBell from './NotificationBell.astro';
+
+export interface Props {
+  currentPath?: string;
+}
+
+const { currentPath } = Astro.props;
+
+const navItems = [
+  { href: '/dashboard', label: 'Dashboard' },
+  { href: '/accounts', label: 'Accounts' },
+  { href: '/transactions', label: 'Transactions' },
+  { href: '/budgets', label: 'Budgets' },
+  { href: '/goals', label: 'Goals' },
+  { href: '/notifications', label: 'Notifications' },
+  { href: '/profile', label: 'Profile' },
+];
+
+const isActive = (href: string) => currentPath === href;
+---
+
+<nav class="bg-white shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex items-center">
+        <a href="/dashboard" class="text-2xl font-bold text-primary-600 hover:text-primary-700 transition-colors">
+          FinanceTracker
+        </a>
+      </div>
+      
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center space-x-8">
+        {navItems.map((item) => (
+          <a 
+            href={item.href}
+            class={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              isActive(item.href) 
+                ? 'text-primary-600 bg-primary-50 border-primary-600' 
+                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
+          >
+            {item.label}
+          </a>
+        ))}
+        
+        <!-- Notification Bell -->
+        <NotificationBell class="ml-4" />
+      </div>
+      
+      <!-- Mobile menu button and notification -->
+      <div class="md:hidden flex items-center space-x-2">
+        <!-- Notification Bell for Mobile -->
+        <NotificationBell />
+        
+        <button 
+          id="mobile-menu-button" 
+          class="text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 rounded-md p-2"
+          aria-label="Toggle navigation menu"
+        >
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Mobile Navigation Menu -->
+  <div id="mobile-menu" class="hidden md:hidden">
+    <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+      {navItems.map((item) => (
+        <a 
+          href={item.href}
+          class={`block px-3 py-2 rounded-md text-base font-medium transition-colors ${
+            isActive(item.href) 
+              ? 'text-primary-600 bg-primary-50' 
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {item.label}
+        </a>
+      ))}
+    </div>
+  </div>
+</nav>
+
+<script>
+  // Mobile menu toggle functionality
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  
+  if (mobileMenuButton && mobileMenu) {
+    mobileMenuButton.addEventListener('click', () => {
+      const isHidden = mobileMenu.classList.contains('hidden');
+      
+      if (isHidden) {
+        mobileMenu.classList.remove('hidden');
+        mobileMenu.classList.add('animate-fade-in');
+      } else {
+        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('animate-fade-in');
+      }
+    });
+    
+    // Close mobile menu when clicking outside
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (!mobileMenuButton.contains(target) && !mobileMenu.contains(target)) {
+        mobileMenu.classList.add('hidden');
+        mobileMenu.classList.remove('animate-fade-in');
+      }
+    });
+  }
+</script>

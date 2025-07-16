@@ -1,0 +1,308 @@
+---
+export interface Props {
+  budget?: {
+    id: string;
+    name: string;
+    category_id: string;
+    amount: number;
+    period: 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+    start_date: string;
+    end_date?: string;
+    description?: string;
+  };
+  categories?: Array<{
+    id: string;
+    name: string;
+    color: string;
+    icon: string;
+  }>;
+  isEditing?: boolean;
+}
+
+const { budget, categories = [], isEditing = false } = Astro.props;
+
+const formTitle = isEditing ? 'Edit Budget' : 'Create New Budget';
+const submitText = isEditing ? 'Update Budget' : 'Create Budget';
+
+// Get today's date for minimum date input
+const today = new Date().toISOString().split('T')[0];
+
+// Calculate default end date based on period
+const getDefaultEndDate = (startDate: string, period: string) => {
+  const start = new Date(startDate);
+  let end = new Date(start);
+  
+  switch (period) {
+    case 'weekly':
+      end.setDate(start.getDate() + 6);
+      break;
+    case 'monthly':
+      end.setMonth(start.getMonth() + 1);
+      end.setDate(start.getDate() - 1);
+      break;
+    case 'quarterly':
+      end.setMonth(start.getMonth() + 3);
+      end.setDate(start.getDate() - 1);
+      break;
+    case 'yearly':
+      end.setFullYear(start.getFullYear() + 1);
+      end.setDate(start.getDate() - 1);
+      break;
+  }
+  
+  return end.toISOString().split('T')[0];
+};
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <h2 class="text-xl font-semibold text-gray-900 mb-6">{formTitle}</h2>
+  
+  <form id="budget-form" class="space-y-6">
+    {isEditing && (
+      <input type="hidden" name="id" value={budget?.id} />
+    )}
+    
+    <!-- Budget Name -->
+    <div>
+      <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+        Budget Name
+      </label>
+      <input
+        type="text"
+        id="name"
+        name="name"
+        value={budget?.name || ''}
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        placeholder="e.g., Monthly Food Budget"
+      />
+    </div>
+    
+    <!-- Category Selection -->
+    <div>
+      <label for="category_id" class="block text-sm font-medium text-gray-700 mb-2">
+        Category
+      </label>
+      <select
+        id="category_id"
+        name="category_id"
+        required
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+      >
+        <option value="">Select a category</option>
+        {categories.map((category) => (
+          <option 
+            value={category.id} 
+            selected={budget?.category_id === category.id}
+          >
+            {category.icon} {category.name}
+          </option>
+        ))}
+      </select>
+    </div>
+    
+    <!-- Amount and Period -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">
+          Budget Amount
+        </label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <span class="text-gray-500 sm:text-sm">$</span>
+          </div>
+          <input
+            type="number"
+            id="amount"
+            name="amount"
+            value={budget?.amount || ''}
+            step="0.01"
+            min="0.01"
+            required
+            class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            placeholder="0.00"
+          />
+        </div>
+      </div>
+      
+      <div>
+        <label for="period" class="block text-sm font-medium text-gray-700 mb-2">
+          Period
+        </label>
+        <select
+          id="period"
+          name="period"
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        >
+          <option value="weekly" selected={budget?.period === 'weekly'}>Weekly</option>
+          <option value="monthly" selected={budget?.period === 'monthly'}>Monthly</option>
+          <option value="quarterly" selected={budget?.period === 'quarterly'}>Quarterly</option>
+          <option value="yearly" selected={budget?.period === 'yearly'}>Yearly</option>
+        </select>
+      </div>
+    </div>
+    
+    <!-- Date Range -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="start_date" class="block text-sm font-medium text-gray-700 mb-2">
+          Start Date
+        </label>
+        <input
+          type="date"
+          id="start_date"
+          name="start_date"
+          value={budget?.start_date || today}
+          min={today}
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        />
+      </div>
+      
+      <div>
+        <label for="end_date" class="block text-sm font-medium text-gray-700 mb-2">
+          End Date
+          <span class="text-gray-500 text-xs ml-1">(Optional)</span>
+        </label>
+        <input
+          type="date"
+          id="end_date"
+          name="end_date"
+          value={budget?.end_date || ''}
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        />
+      </div>
+    </div>
+    
+    <!-- Description -->
+    <div>
+      <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+        Description
+        <span class="text-gray-500 text-xs ml-1">(Optional)</span>
+      </label>
+      <textarea
+        id="description"
+        name="description"
+        rows="3"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        placeholder="Add any notes about this budget..."
+      >{budget?.description || ''}</textarea>
+    </div>
+    
+    <!-- Form Actions -->
+    <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+      <button
+        type="button"
+        onclick="closeBudgetForm()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+      >
+        {submitText}
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+  // Auto-calculate end date based on period
+  const periodSelect = document.getElementById('period');
+  const startDateInput = document.getElementById('start_date');
+  const endDateInput = document.getElementById('end_date');
+  
+  function calculateEndDate() {
+    const startDate = startDateInput.value;
+    const period = periodSelect.value;
+    
+    if (startDate && period) {
+      const start = new Date(startDate);
+      let end = new Date(start);
+      
+      switch (period) {
+        case 'weekly':
+          end.setDate(start.getDate() + 6);
+          break;
+        case 'monthly':
+          end.setMonth(start.getMonth() + 1);
+          end.setDate(start.getDate() - 1);
+          break;
+        case 'quarterly':
+          end.setMonth(start.getMonth() + 3);
+          end.setDate(start.getDate() - 1);
+          break;
+        case 'yearly':
+          end.setFullYear(start.getFullYear() + 1);
+          end.setDate(start.getDate() - 1);
+          break;
+      }
+      
+      endDateInput.value = end.toISOString().split('T')[0];
+    }
+  }
+  
+  periodSelect.addEventListener('change', calculateEndDate);
+  startDateInput.addEventListener('change', calculateEndDate);
+  
+  // Form submission handler
+  document.getElementById('budget-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+      const method = data.id ? 'PUT' : 'POST';
+      const response = await fetch('/api/budgets', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (response.ok) {
+        // Show success message
+        showNotification('Budget saved successfully!', 'success');
+        
+        // Refresh the page or close the form
+        if (typeof closeBudgetForm === 'function') {
+          closeBudgetForm();
+        }
+        
+        // Refresh budget data
+        window.location.reload();
+      } else {
+        const error = await response.text();
+        showNotification(error || 'Failed to save budget', 'error');
+      }
+    } catch (error) {
+      console.error('Error saving budget:', error);
+      showNotification('Failed to save budget', 'error');
+    }
+  });
+  
+  // Initialize end date on page load
+  calculateEndDate();
+  
+  // Notification function
+  function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `fixed top-4 right-4 p-4 rounded-md shadow-lg z-50 ${
+      type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+      notification.remove();
+    }, 3000);
+  }
+</script>

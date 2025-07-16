@@ -1,0 +1,180 @@
+---
+// This component displays transactions with real-time updates
+export interface Props {
+  initialTransactions?: any[];
+  limit?: number;
+}
+
+const { initialTransactions = [], limit = 5 } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow">
+  <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+    <h2 class="text-lg font-medium text-gray-900">Recent Transactions</h2>
+    <a href="/transactions" class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors">
+      View All →
+    </a>
+  </div>
+  
+  <div id="transactions-container" class="divide-y divide-gray-200">
+    <!-- Initial content will be replaced by real-time updates -->
+    {initialTransactions.length > 0 ? (
+      initialTransactions.slice(0, limit).map((transaction) => (
+        <div class="p-6 transaction-item" data-transaction-id={transaction.id}>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                transaction.transaction_type === 'income' ? 'bg-green-100' : 
+                transaction.transaction_type === 'expense' ? 'bg-red-100' : 'bg-blue-100'
+              }`}>
+                <span class={`text-sm font-medium ${
+                  transaction.transaction_type === 'income' ? 'text-green-600' : 
+                  transaction.transaction_type === 'expense' ? 'text-red-600' : 'text-blue-600'
+                }`}>
+                  {transaction.transaction_type === 'income' ? '+' : 
+                   transaction.transaction_type === 'expense' ? '-' : '↔'}
+                </span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">{transaction.description || 'Transaction'}</p>
+                <p class="text-sm text-gray-500">
+                  {transaction.accounts?.name || 'Unknown Account'}
+                  {transaction.categories?.name && ` • ${transaction.categories.name}`}
+                </p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class={`text-sm font-medium ${
+                transaction.transaction_type === 'income' ? 'text-green-600' : 
+                transaction.transaction_type === 'expense' ? 'text-red-600' : 'text-blue-600'
+              }`}>
+                {transaction.transaction_type === 'income' ? '+' : 
+                 transaction.transaction_type === 'expense' ? '-' : ''}${Math.abs(transaction.amount).toLocaleString()}
+              </p>
+              <p class="text-sm text-gray-500">{new Date(transaction.transaction_date).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      ))
+    ) : (
+      <div class="p-12 text-center">
+        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        </svg>
+        <h3 class="mt-2 text-sm font-medium text-gray-900">No transactions yet</h3>
+        <p class="mt-1 text-sm text-gray-500">Get started by adding your first transaction.</p>
+      </div>
+    )}
+  </div>
+</div>
+
+<script>
+  // Import store and set up real-time updates
+  import('/src/lib/store.js').then(({ transactionsStore }) => {
+    const container = document.getElementById('transactions-container');
+    if (!container) return;
+
+    // Subscribe to store changes
+    const unsubscribe = transactionsStore.subscribe((transactions) => {
+      updateTransactionsList(transactions);
+    });
+
+    // Clean up subscription when page unloads
+    window.addEventListener('beforeunload', unsubscribe);
+    window.addEventListener('pagehide', unsubscribe);
+
+    function updateTransactionsList(transactions) {
+      const limit = 5; // Match the prop
+      const limitedTransactions = transactions.slice(0, limit);
+
+      if (limitedTransactions.length === 0) {
+        container.innerHTML = `
+          <div class="p-12 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No transactions yet</h3>
+            <p class="mt-1 text-sm text-gray-500">Get started by adding your first transaction.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Build HTML for transactions
+      const transactionsHTML = limitedTransactions.map(transaction => `
+        <div class="p-6 transaction-item transition-all duration-300" data-transaction-id="${transaction.id}">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+              <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                transaction.transaction_type === 'income' ? 'bg-green-100' : 
+                transaction.transaction_type === 'expense' ? 'bg-red-100' : 'bg-blue-100'
+              }">
+                <span class="text-sm font-medium ${
+                  transaction.transaction_type === 'income' ? 'text-green-600' : 
+                  transaction.transaction_type === 'expense' ? 'text-red-600' : 'text-blue-600'
+                }">
+                  ${transaction.transaction_type === 'income' ? '+' : 
+                    transaction.transaction_type === 'expense' ? '-' : '↔'}
+                </span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">${transaction.description || 'Transaction'}</p>
+                <p class="text-sm text-gray-500">
+                  ${transaction.account?.name || 'Unknown Account'}
+                  ${transaction.category?.name ? ` • ${transaction.category.name}` : ''}
+                </p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="text-sm font-medium ${
+                transaction.transaction_type === 'income' ? 'text-green-600' : 
+                transaction.transaction_type === 'expense' ? 'text-red-600' : 'text-blue-600'
+              }">
+                ${transaction.transaction_type === 'income' ? '+' : 
+                  transaction.transaction_type === 'expense' ? '-' : ''}$${Math.abs(transaction.amount).toLocaleString()}
+              </p>
+              <p class="text-sm text-gray-500">${new Date(transaction.transaction_date).toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Update container with smooth transition
+      container.classList.add('opacity-50');
+      setTimeout(() => {
+        container.innerHTML = transactionsHTML;
+        container.classList.remove('opacity-50');
+        
+        // Add animation to new items
+        const newItems = container.querySelectorAll('.transaction-item');
+        newItems.forEach((item, index) => {
+          item.style.animationDelay = `${index * 50}ms`;
+          item.classList.add('animate-slide-in');
+        });
+      }, 150);
+    }
+  }).catch(error => {
+    console.error('Failed to load real-time transactions:', error);
+  });
+</script>
+
+<style>
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out forwards;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .transaction-item:hover {
+    background-color: #f9fafb;
+  }
+</style>

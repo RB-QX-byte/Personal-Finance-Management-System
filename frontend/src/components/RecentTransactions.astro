@@ -1,0 +1,143 @@
+---
+export interface Props {
+  transactions?: Array<{
+    id: string;
+    description: string;
+    amount: number;
+    transaction_date: string;
+    transaction_type: 'income' | 'expense';
+    categories?: {
+      name: string;
+      color: string;
+    };
+    accounts: {
+      name: string;
+    };
+  }>;
+  currency?: string;
+}
+
+const { 
+  transactions = [],
+  currency = '$'
+} = Astro.props;
+
+const getCategoryIcon = (category: string) => {
+  switch (category.toLowerCase()) {
+    case 'food':
+      return 'M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 3H4a1 1 0 00-1 1v1m4 8a2 2 0 100 4 2 2 0 000-4zm10 0a2 2 0 100 4 2 2 0 000-4z';
+    case 'income':
+      return 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1';
+    case 'bills':
+      return 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z';
+    case 'transportation':
+      return 'M8 7V3a1 1 0 011-1h6a1 1 0 011 1v4h4a1 1 0 011 1v5a1 1 0 01-1 1h-4v2a1 1 0 01-1 1H9a1 1 0 01-1-1v-2H4a1 1 0 01-1-1V8a1 1 0 011-1h4zM6 19h2v2H6v-2z';
+    default:
+      return 'M4 6h16M4 12h16M4 18h16';
+  }
+};
+
+const getCategoryColor = (category: string, color?: string) => {
+  if (color) {
+    return `text-gray-700`;
+  }
+  switch (category.toLowerCase()) {
+    case 'food':
+      return 'bg-orange-100 text-orange-600';
+    case 'income':
+      return 'bg-success-100 text-success-600';
+    case 'bills':
+      return 'bg-danger-100 text-danger-600';
+    case 'transportation':
+      return 'bg-blue-100 text-blue-600';
+    default:
+      return 'bg-gray-100 text-gray-600';
+  }
+};
+
+const getAmountColor = (type: string) => {
+  return type === 'income' ? 'text-success-600' : 'text-danger-600';
+};
+
+const formatAmount = (amount: number, type: string) => {
+  const sign = type === 'income' ? '+' : '-';
+  return `${sign}${currency}${Math.abs(amount).toFixed(2)}`;
+};
+
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric' 
+    });
+  }
+};
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+      <a href="/transactions" class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+        View All
+      </a>
+    </div>
+  </div>
+  
+  <div class="p-6">
+    <div class="space-y-4">
+      {transactions.map((transaction, index) => (
+        <div class={`flex items-center justify-between py-3 ${index < transactions.length - 1 ? 'border-b border-gray-100' : ''}`}>
+          <div class="flex items-center space-x-3">
+            <div class={`w-10 h-10 rounded-full flex items-center justify-center ${transaction.categories ? getCategoryColor(transaction.categories.name, transaction.categories.color) : 'bg-gray-100 text-gray-600'}`} 
+                 style={transaction.categories ? `background-color: ${transaction.categories.color}20; color: ${transaction.categories.color}` : ''}>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={getCategoryIcon(transaction.categories?.name || 'other')}></path>
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-medium text-gray-900">{transaction.description || 'No description'}</p>
+              <div class="flex items-center space-x-2 text-xs text-gray-500">
+                <span>{formatDate(transaction.transaction_date)}</span>
+                <span>•</span>
+                <span>{transaction.categories?.name || 'Uncategorized'}</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class={`text-sm font-semibold ${getAmountColor(transaction.transaction_type)}`}>
+              {formatAmount(transaction.amount, transaction.transaction_type)}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+    
+    {transactions.length === 0 && (
+      <div class="text-center py-8">
+        <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        </svg>
+        <p class="text-gray-500 text-sm">No transactions yet</p>
+        <button class="mt-3 text-primary-600 hover:text-primary-700 text-sm font-medium">
+          Add your first transaction
+        </button>
+      </div>
+    )}
+    
+    <div class="mt-6 pt-4 border-t border-gray-200">
+      <a href="/transactions" class="block w-full bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors text-center">
+        Add Transaction
+      </a>
+    </div>
+  </div>
+</div>

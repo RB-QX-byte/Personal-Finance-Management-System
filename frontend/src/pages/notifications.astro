@@ -1,0 +1,535 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Notifications - FinanceTracker" currentPath="/notifications">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Page Header -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Notifications</h1>
+          <p class="mt-2 text-gray-600">Stay updated on your financial activities</p>
+        </div>
+        <div class="flex items-center space-x-4">
+          <button 
+            id="mark-all-read-btn" 
+            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Mark All Read
+          </button>
+          <button 
+            id="clear-read-btn" 
+            class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            Clear Read
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Total Notifications</p>
+            <p id="total-count" class="text-2xl font-semibold text-gray-900">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Unread</p>
+            <p id="unread-count" class="text-2xl font-semibold text-gray-900">0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+              <svg class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-500">Read</p>
+            <p id="read-count" class="text-2xl font-semibold text-gray-900">0</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="mb-6">
+      <nav class="flex space-x-8" aria-label="Tabs">
+        <button 
+          class="filter-tab active whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+          data-filter="all"
+        >
+          All Notifications
+        </button>
+        <button 
+          class="filter-tab whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+          data-filter="unread"
+        >
+          Unread
+        </button>
+        <button 
+          class="filter-tab whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+          data-filter="budget_alert"
+        >
+          Budget Alerts
+        </button>
+        <button 
+          class="filter-tab whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+          data-filter="goal_milestone"
+        >
+          Goal Milestones
+        </button>
+        <button 
+          class="filter-tab whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors"
+          data-filter="transaction_alert"
+        >
+          Transaction Alerts
+        </button>
+      </nav>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="bg-white rounded-lg shadow">
+      <!-- Loading State -->
+      <div id="loading-state" class="p-8 text-center">
+        <svg class="animate-spin h-8 w-8 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p class="text-gray-500">Loading notifications...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="p-8 text-center hidden">
+        <svg class="h-16 w-16 mx-auto mb-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">No notifications</h3>
+        <p class="text-gray-500">You're all caught up! No notifications to show.</p>
+      </div>
+
+      <!-- Notifications Container -->
+      <div id="notifications-container" class="divide-y divide-gray-200"></div>
+
+      <!-- Load More Button -->
+      <div id="load-more-container" class="p-4 text-center hidden">
+        <button 
+          id="load-more-btn" 
+          class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors"
+        >
+          Load More
+        </button>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  import { notificationsStore } from '../lib/store';
+  import type { Notification } from '../lib/types';
+
+  class NotificationsPage {
+    private notifications: Notification[] = [];
+    private filteredNotifications: Notification[] = [];
+    private currentFilter = 'all';
+    private currentPage = 1;
+    private pageSize = 20;
+    private hasMore = true;
+
+    private totalCountEl = document.getElementById('total-count')!;
+    private unreadCountEl = document.getElementById('unread-count')!;
+    private readCountEl = document.getElementById('read-count')!;
+    private loadingEl = document.getElementById('loading-state')!;
+    private emptyEl = document.getElementById('empty-state')!;
+    private containerEl = document.getElementById('notifications-container')!;
+    private loadMoreContainer = document.getElementById('load-more-container')!;
+    private loadMoreBtn = document.getElementById('load-more-btn')!;
+    private markAllReadBtn = document.getElementById('mark-all-read-btn')!;
+    private clearReadBtn = document.getElementById('clear-read-btn')!;
+
+    constructor() {
+      this.bindEvents();
+      this.loadNotifications();
+    }
+
+    private bindEvents(): void {
+      // Filter tabs
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.addEventListener('click', (e) => {
+          const filter = (e.target as HTMLElement).dataset.filter!;
+          this.setFilter(filter);
+        });
+      });
+
+      // Action buttons
+      this.markAllReadBtn.addEventListener('click', () => this.markAllAsRead());
+      this.clearReadBtn.addEventListener('click', () => this.clearReadNotifications());
+      this.loadMoreBtn.addEventListener('click', () => this.loadMore());
+
+      // Store subscription
+      notificationsStore.subscribe((notifications) => {
+        this.notifications = notifications;
+        this.updateStats();
+        this.applyFilter();
+      });
+    }
+
+    private async loadNotifications(): Promise<void> {
+      try {
+        const response = await fetch(`/api/notifications?page=${this.currentPage}&limit=${this.pageSize}`);
+        if (!response.ok) throw new Error('Failed to fetch notifications');
+
+        const data = await response.json();
+        
+        if (this.currentPage === 1) {
+          this.notifications = data.notifications || [];
+        } else {
+          this.notifications = [...this.notifications, ...(data.notifications || [])];
+        }
+
+        this.hasMore = data.pagination?.hasMore || false;
+        
+        // Update store
+        notificationsStore.set(this.notifications);
+
+        this.hideLoading();
+        
+      } catch (error) {
+        console.error('Failed to load notifications:', error);
+        this.showError();
+      }
+    }
+
+    private loadMore(): void {
+      this.currentPage++;
+      this.loadNotifications();
+    }
+
+    private setFilter(filter: string): void {
+      this.currentFilter = filter;
+      
+      // Update tab states
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-filter') === filter) {
+          tab.classList.add('active');
+        }
+      });
+
+      this.applyFilter();
+    }
+
+    private applyFilter(): void {
+      switch (this.currentFilter) {
+        case 'unread':
+          this.filteredNotifications = this.notifications.filter(n => !n.is_read);
+          break;
+        case 'budget_alert':
+        case 'goal_milestone':
+        case 'transaction_alert':
+          this.filteredNotifications = this.notifications.filter(n => n.type === this.currentFilter);
+          break;
+        default:
+          this.filteredNotifications = this.notifications;
+          break;
+      }
+
+      this.renderNotifications();
+    }
+
+    private renderNotifications(): void {
+      if (this.filteredNotifications.length === 0) {
+        this.containerEl.innerHTML = '';
+        this.emptyEl.classList.remove('hidden');
+        this.loadMoreContainer.classList.add('hidden');
+        return;
+      }
+
+      this.emptyEl.classList.add('hidden');
+
+      this.containerEl.innerHTML = this.filteredNotifications
+        .map(notification => this.createNotificationElement(notification))
+        .join('');
+
+      // Show/hide load more button
+      if (this.hasMore && this.currentFilter === 'all') {
+        this.loadMoreContainer.classList.remove('hidden');
+      } else {
+        this.loadMoreContainer.classList.add('hidden');
+      }
+
+      this.bindNotificationEvents();
+    }
+
+    private createNotificationElement(notification: Notification): string {
+      const isUnread = !notification.is_read;
+      const timeAgo = this.getTimeAgo(new Date(notification.created_at));
+      const icon = this.getNotificationIcon(notification.type);
+      const typeLabel = this.getTypeLabel(notification.type);
+
+      return `
+        <div 
+          class="notification-item p-6 hover:bg-gray-50 cursor-pointer ${isUnread ? 'bg-blue-50 border-l-4 border-blue-500' : ''}"
+          data-notification-id="${notification.id}"
+        >
+          <div class="flex items-start space-x-4">
+            <div class="flex-shrink-0 mt-1">
+              <span class="text-2xl">${icon}</span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between">
+                <div class="flex-1">
+                  <div class="flex items-center space-x-2 mb-1">
+                    <h3 class="text-lg font-semibold text-gray-900">${notification.title}</h3>
+                    ${isUnread ? '<span class="w-2 h-2 bg-blue-500 rounded-full"></span>' : ''}
+                  </div>
+                  <span class="inline-block px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full mb-2">
+                    ${typeLabel}
+                  </span>
+                  <p class="text-gray-700 mb-3">${notification.message}</p>
+                  <p class="text-sm text-gray-500">${timeAgo}</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                  <button 
+                    class="toggle-read-btn p-2 text-gray-400 hover:text-gray-600 rounded"
+                    data-notification-id="${notification.id}"
+                    title="${isUnread ? 'Mark as read' : 'Mark as unread'}"
+                  >
+                    ${isUnread 
+                      ? '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+                      : '<svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>'
+                    }
+                  </button>
+                  <button 
+                    class="delete-btn p-2 text-gray-400 hover:text-red-600 rounded"
+                    data-notification-id="${notification.id}"
+                    title="Delete notification"
+                  >
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    private getNotificationIcon(type: string): string {
+      switch (type) {
+        case 'budget_alert': return '⚠️';
+        case 'goal_milestone': return '🎯';
+        case 'transaction_alert': return '💰';
+        default: return 'ℹ️';
+      }
+    }
+
+    private getTypeLabel(type: string): string {
+      switch (type) {
+        case 'budget_alert': return 'Budget Alert';
+        case 'goal_milestone': return 'Goal Milestone';
+        case 'transaction_alert': return 'Transaction Alert';
+        default: return 'Info';
+      }
+    }
+
+    private getTimeAgo(date: Date): string {
+      const now = new Date();
+      const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+      if (diffInSeconds < 60) return 'Just now';
+      if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+      if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+      if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+      
+      return date.toLocaleDateString();
+    }
+
+    private bindNotificationEvents(): void {
+      // Toggle read status
+      document.querySelectorAll('.toggle-read-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = (e.currentTarget as HTMLElement).dataset.notificationId!;
+          this.toggleReadStatus(id);
+        });
+      });
+
+      // Delete notifications
+      document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = (e.currentTarget as HTMLElement).dataset.notificationId!;
+          this.deleteNotification(id);
+        });
+      });
+    }
+
+    private async toggleReadStatus(id: string): Promise<void> {
+      const notification = this.notifications.find(n => n.id === id);
+      if (!notification) return;
+
+      try {
+        const response = await fetch(`/api/notifications/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_read: !notification.is_read }),
+        });
+
+        if (!response.ok) throw new Error('Failed to update notification');
+
+        // Update store
+        notificationsStore.update(notifications =>
+          notifications.map(n =>
+            n.id === id ? { ...n, is_read: !n.is_read } : n
+          )
+        );
+
+      } catch (error) {
+        console.error('Failed to toggle read status:', error);
+      }
+    }
+
+    private async deleteNotification(id: string): Promise<void> {
+      if (!confirm('Are you sure you want to delete this notification?')) return;
+
+      try {
+        const response = await fetch(`/api/notifications/${id}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) throw new Error('Failed to delete notification');
+
+        // Update store
+        notificationsStore.update(notifications =>
+          notifications.filter(n => n.id !== id)
+        );
+
+      } catch (error) {
+        console.error('Failed to delete notification:', error);
+      }
+    }
+
+    private async markAllAsRead(): Promise<void> {
+      try {
+        const response = await fetch('/api/notifications/actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'mark_all_read' }),
+        });
+
+        if (!response.ok) throw new Error('Failed to mark all as read');
+
+        // Update store
+        notificationsStore.update(notifications =>
+          notifications.map(n => ({ ...n, is_read: true }))
+        );
+
+      } catch (error) {
+        console.error('Failed to mark all as read:', error);
+      }
+    }
+
+    private async clearReadNotifications(): Promise<void> {
+      if (!confirm('Are you sure you want to delete all read notifications?')) return;
+
+      try {
+        const response = await fetch('/api/notifications/actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete_read' }),
+        });
+
+        if (!response.ok) throw new Error('Failed to clear read notifications');
+
+        // Update store
+        notificationsStore.update(notifications =>
+          notifications.filter(n => !n.is_read)
+        );
+
+      } catch (error) {
+        console.error('Failed to clear read notifications:', error);
+      }
+    }
+
+    private updateStats(): void {
+      const total = this.notifications.length;
+      const unread = this.notifications.filter(n => !n.is_read).length;
+      const read = total - unread;
+
+      this.totalCountEl.textContent = total.toString();
+      this.unreadCountEl.textContent = unread.toString();
+      this.readCountEl.textContent = read.toString();
+    }
+
+    private hideLoading(): void {
+      this.loadingEl.classList.add('hidden');
+    }
+
+    private showError(): void {
+      this.loadingEl.innerHTML = `
+        <div class="text-center text-red-500">
+          <svg class="h-12 w-12 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p>Failed to load notifications</p>
+        </div>
+      `;
+    }
+  }
+
+  // Initialize when DOM is loaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => new NotificationsPage());
+  } else {
+    new NotificationsPage();
+  }
+</script>
+
+<style>
+  .filter-tab {
+    border-color: transparent;
+    color: #6b7280;
+  }
+
+  .filter-tab:hover {
+    color: #374151;
+    border-color: #d1d5db;
+  }
+
+  .filter-tab.active {
+    color: #3b82f6;
+    border-color: #3b82f6;
+  }
+</style>

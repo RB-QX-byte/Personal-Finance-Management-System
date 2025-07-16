@@ -1,0 +1,303 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<Layout title="Profile - Personal Finance Manager">
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-4">
+          <div class="flex items-center space-x-4">
+            <a href="/dashboard" class="text-indigo-600 hover:text-indigo-500">
+              ← Back to Dashboard
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">Profile Settings</h1>
+          </div>
+          <button 
+            id="logout-btn"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-4 rounded-md"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-3xl mx-auto py-6 sm:px-6 lg:px-8">
+      <div class="px-4 py-6 sm:px-0">
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <div class="mb-6">
+              <h3 class="text-lg font-medium text-gray-900">Account Information</h3>
+              <p class="mt-1 text-sm text-gray-600">
+                Update your account details and preferences.
+              </p>
+            </div>
+
+            <div id="loading" class="text-center py-4">
+              <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              <span class="ml-2 text-sm text-gray-600">Loading profile...</span>
+            </div>
+
+            <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            </div>
+
+            <div id="success-message" class="hidden bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+            </div>
+
+            <form id="profile-form" class="hidden space-y-6">
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">
+                  Email Address
+                </label>
+                <input 
+                  type="email" 
+                  id="email" 
+                  disabled
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-500 sm:text-sm"
+                />
+                <p class="mt-1 text-xs text-gray-500">
+                  Email cannot be changed. Contact support if needed.
+                </p>
+              </div>
+
+              <div>
+                <label for="full_name" class="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
+                <input 
+                  type="text" 
+                  id="full_name" 
+                  name="full_name"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  placeholder="Enter your full name"
+                />
+              </div>
+
+              <div>
+                <label for="currency_preference" class="block text-sm font-medium text-gray-700">
+                  Preferred Currency
+                </label>
+                <select 
+                  id="currency_preference" 
+                  name="currency_preference"
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                >
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="GBP">GBP - British Pound</option>
+                  <option value="CAD">CAD - Canadian Dollar</option>
+                  <option value="AUD">AUD - Australian Dollar</option>
+                  <option value="JPY">JPY - Japanese Yen</option>
+                </select>
+              </div>
+
+              <div class="border-t border-gray-200 pt-6">
+                <div class="flex justify-end space-x-3">
+                  <button 
+                    type="button"
+                    id="cancel-btn"
+                    class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    id="save-btn"
+                    class="bg-indigo-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span id="save-text">Save Changes</span>
+                    <span id="save-loading" class="hidden">Saving...</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Account Statistics -->
+        <div class="mt-8 bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Account Statistics</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="bg-gray-50 px-4 py-3 rounded-md">
+                <dt class="text-sm font-medium text-gray-500">Member Since</dt>
+                <dd id="member-since" class="mt-1 text-lg font-semibold text-gray-900">-</dd>
+              </div>
+              <div class="bg-gray-50 px-4 py-3 rounded-md">
+                <dt class="text-sm font-medium text-gray-500">Last Login</dt>
+                <dd id="last-login" class="mt-1 text-lg font-semibold text-gray-900">-</dd>
+              </div>
+              <div class="bg-gray-50 px-4 py-3 rounded-md">
+                <dt class="text-sm font-medium text-gray-500">User ID</dt>
+                <dd id="user-id" class="mt-1 text-sm font-mono text-gray-700">-</dd>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</Layout>
+
+<script>
+  interface Profile {
+    id: string;
+    full_name: string;
+    currency_preference: string;
+    email: string;
+    created_at: string;
+  }
+
+  const form = document.getElementById('profile-form') as HTMLFormElement;
+  const loadingDiv = document.getElementById('loading') as HTMLDivElement;
+  const errorDiv = document.getElementById('error-message') as HTMLDivElement;
+  const successDiv = document.getElementById('success-message') as HTMLDivElement;
+  const logoutBtn = document.getElementById('logout-btn') as HTMLButtonElement;
+  const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
+  const saveText = document.getElementById('save-text') as HTMLSpanElement;
+  const saveLoading = document.getElementById('save-loading') as HTMLSpanElement;
+
+  let originalData: Profile | null = null;
+
+  function showError(message: string) {
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('hidden');
+    successDiv.classList.add('hidden');
+  }
+
+  function showSuccess(message: string) {
+    successDiv.textContent = message;
+    successDiv.classList.remove('hidden');
+    errorDiv.classList.add('hidden');
+  }
+
+  function hideMessages() {
+    errorDiv.classList.add('hidden');
+    successDiv.classList.add('hidden');
+  }
+
+  function setLoading(loading: boolean) {
+    saveBtn.disabled = loading;
+    if (loading) {
+      saveText.classList.add('hidden');
+      saveLoading.classList.remove('hidden');
+    } else {
+      saveText.classList.remove('hidden');
+      saveLoading.classList.add('hidden');
+    }
+  }
+
+  function populateForm(profile: Profile) {
+    const emailInput = document.getElementById('email') as HTMLInputElement;
+    const fullNameInput = document.getElementById('full_name') as HTMLInputElement;
+    const currencySelect = document.getElementById('currency_preference') as HTMLSelectElement;
+
+    emailInput.value = profile.email;
+    fullNameInput.value = profile.full_name || '';
+    currencySelect.value = profile.currency_preference || 'USD';
+
+    // Populate statistics
+    const memberSince = document.getElementById('member-since') as HTMLElement;
+    const lastLogin = document.getElementById('last-login') as HTMLElement;
+    const userId = document.getElementById('user-id') as HTMLElement;
+
+    memberSince.textContent = new Date(profile.created_at).toLocaleDateString();
+    lastLogin.textContent = 'Now'; // Could be enhanced with actual last login data
+    userId.textContent = profile.id;
+
+    originalData = { ...profile };
+  }
+
+  function resetForm() {
+    if (originalData) {
+      populateForm(originalData);
+    }
+    hideMessages();
+  }
+
+  // Load profile data
+  async function loadProfile() {
+    try {
+      const response = await fetch('/api/profile');
+      const result = await response.json();
+
+      if (response.ok) {
+        populateForm(result.profile);
+        loadingDiv.classList.add('hidden');
+        form.classList.remove('hidden');
+      } else {
+        showError(result.error || 'Failed to load profile');
+        loadingDiv.classList.add('hidden');
+      }
+    } catch (error) {
+      showError('An error occurred while loading your profile.');
+      loadingDiv.classList.add('hidden');
+    }
+  }
+
+  // Handle form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideMessages();
+    setLoading(true);
+
+    const formData = new FormData(form);
+    const data = {
+      full_name: formData.get('full_name') as string,
+      currency_preference: formData.get('currency_preference') as string,
+    };
+
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showSuccess('Profile updated successfully!');
+        originalData = { ...result.profile };
+      } else {
+        showError(result.error || 'Failed to update profile');
+      }
+    } catch (error) {
+      showError('An error occurred while updating your profile.');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // Handle cancel button
+  document.getElementById('cancel-btn')?.addEventListener('click', resetForm);
+
+  // Handle logout
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      window.location.href = '/login';
+    }
+  });
+
+  // Load profile on page load
+  loadProfile();
+</script>

@@ -1,0 +1,237 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NetWorthTracker from '../components/NetWorthTracker.astro';
+import AccountSummary from '../components/AccountSummary.astro';
+import RecentTransactions from '../components/RecentTransactions.astro';
+import RealtimeTransactions from '../components/RealtimeTransactions.astro';
+import RealtimeAccounts from '../components/RealtimeAccounts.astro';
+import BudgetOverview from '../components/BudgetOverview.astro';
+import GoalsOverview from '../components/GoalsOverview.astro';
+import QuickActions from '../components/QuickActions.astro';
+import RealtimeProvider from '../components/RealtimeProvider.astro';
+import { supabase } from '../lib/supabase';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+
+// Fetch user's accounts
+let accounts = [];
+try {
+  const { data: accountsData, error } = await supabase
+    .from('accounts')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+  
+  if (!error && accountsData) {
+    accounts = accountsData;
+  }
+} catch (error) {
+  console.error('Error fetching accounts:', error);
+}
+
+// Calculate totals for Net Worth Tracker
+const totalAssets = accounts
+  .filter(account => account.balance > 0)
+  .reduce((sum, account) => sum + account.balance, 0);
+
+const totalLiabilities = Math.abs(accounts
+  .filter(account => account.balance < 0)
+  .reduce((sum, account) => sum + account.balance, 0));
+
+// Fetch recent transactions for the dashboard
+let recentTransactions = [];
+try {
+  const { data: transactionsData, error } = await supabase
+    .from('transactions')
+    .select(`
+      *,
+      accounts(name, account_type),
+      categories(name, color)
+    `)
+    .eq('user_id', user.id)
+    .order('transaction_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(5);
+  
+  if (!error && transactionsData) {
+    recentTransactions = transactionsData;
+  }
+} catch (error) {
+  console.error('Error fetching recent transactions:', error);
+}
+
+// Fetch budget data for the dashboard
+let budgets = [];
+let budgetTracking = [];
+try {
+  const { data: budgetsData, error: budgetsError } = await supabase
+    .from('budgets')
+    .select(`
+      *,
+      categories(id, name, color, icon)
+    `)
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (!budgetsError && budgetsData) {
+    budgets = budgetsData;
+    
+    // Calculate budget tracking data
+    const trackingPromises = budgets.map(async (budget) => {
+      const budgetStartDate = budget.start_date;
+      const budgetEndDate = budget.end_date || new Date().toISOString().split('T')[0];
+
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('amount, transaction_type')
+        .eq('user_id', user.id)
+        .eq('category_id', budget.category_id)
+        .gte('transaction_date', budgetStartDate)
+        .lte('transaction_date', budgetEndDate)
+        .eq('transaction_type', 'expense');
+
+      const spentAmount = transactions?.reduce((total, transaction) => {
+        return total + Math.abs(parseFloat(transaction.amount));
+      }, 0) || 0;
+
+      const budgetedAmount = parseFloat(budget.amount);
+      const remainingAmount = budgetedAmount - spentAmount;
+      const percentageUsed = budgetedAmount > 0 ? (spentAmount / budgetedAmount) * 100 : 0;
+
+      let status;
+      if (spentAmount > budgetedAmount) {
+        status = 'over_budget';
+      } else if (percentageUsed >= 80) {
+        status = 'on_track';
+      } else {
+        status = 'under_budget';
+      }
+
+      return {
+        budget_id: budget.id,
+        budget_name: budget.name,
+        category_name: budget.categories?.name || '',
+        category_color: budget.categories?.color || '#6366f1',
+        category_icon: budget.categories?.icon || '',
+        budgeted_amount: budgetedAmount,
+        spent_amount: spentAmount,
+        remaining_amount: remainingAmount,
+        percentage_used: percentageUsed,
+        status,
+        period: budget.period
+      };
+    });
+
+    budgetTracking = await Promise.all(trackingPromises);
+  }
+} catch (error) {
+  console.error('Error fetching budget data:', error);
+}
+
+// Fetch goals data for the dashboard
+let goals = [];
+try {
+  const { data: goalsData, error: goalsError } = await supabase
+    .from('goals')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false });
+
+  if (!goalsError && goalsData) {
+    goals = goalsData;
+  }
+} catch (error) {
+  console.error('Error fetching goals data:', error);
+}
+---
+
+<Layout title="Dashboard - Personal Finance Manager">
+  <div class="bg-gray-50">
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p class="text-sm text-gray-600 mt-1">Welcome back, {user.email}</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button 
+              id="logout-btn"
+              class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Dashboard Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column - Main Content -->
+        <div class="lg:col-span-2 space-y-6">
+          <!-- Net Worth Section -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <NetWorthTracker assets={totalAssets} liabilities={totalLiabilities} currency="$" />
+            <QuickActions />
+          </div>
+
+          <!-- Recent Transactions (Real-time) -->
+          <RealtimeTransactions initialTransactions={recentTransactions} />
+          
+          <!-- Goals Overview -->
+          <GoalsOverview goals={goals} currency="$" />
+        </div>
+
+        <!-- Right Column - Sidebar -->
+        <div class="space-y-6">
+          <!-- Account Summary (Real-time) -->
+          <RealtimeAccounts initialAccounts={accounts} />
+          
+          <!-- Budget Overview -->
+          <BudgetOverview budgetTracking={budgetTracking} currency="$" />
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Initialize real-time subscriptions -->
+  <RealtimeProvider 
+    userId={user.id} 
+    initialData={{
+      transactions: recentTransactions,
+      accounts: accounts,
+      goals: goals,
+      notifications: []
+    }}
+  />
+</Layout>
+
+<script>
+  const logoutBtn = document.getElementById('logout-btn');
+  
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        window.location.href = '/login';
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if logout fails
+      window.location.href = '/login';
+    }
+  });
+</script>

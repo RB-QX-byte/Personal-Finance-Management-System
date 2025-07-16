@@ -1,0 +1,41 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Redirect authenticated users to dashboard
+if (Astro.locals.isAuthenticated) {
+  return Astro.redirect('/dashboard');
+}
+---
+
+<Layout title="Personal Finance Management System">
+  <div class="container mx-auto px-4 py-8">
+    <div class="text-center">
+      <h1 class="text-4xl font-bold text-gray-900 mb-4">
+        Personal Finance Management System
+      </h1>
+      <p class="text-lg text-gray-600 mb-8">
+        Manage your finances with ease and precision
+      </p>
+      <div class="bg-white rounded-lg shadow-md p-6 max-w-md mx-auto">
+        <h2 class="text-xl font-semibold mb-4">Welcome to Your Financial Dashboard</h2>
+        <p class="text-gray-600 mb-6">
+          Track your expenses, manage budgets, and achieve your financial goals.
+        </p>
+        <div class="space-y-3">
+          <a 
+            href="/login" 
+            class="block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md text-center transition duration-200"
+          >
+            Sign In
+          </a>
+          <a 
+            href="/register" 
+            class="block w-full bg-white hover:bg-gray-50 text-indigo-600 font-medium py-2 px-4 rounded-md border border-indigo-600 text-center transition duration-200"
+          >
+            Create Account
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>

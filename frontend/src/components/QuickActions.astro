@@ -1,0 +1,91 @@
+---
+export interface Props {
+  showFullActions?: boolean;
+}
+
+const { showFullActions = false } = Astro.props;
+
+const primaryActions = [
+  {
+    label: 'Add Transaction',
+    icon: 'M12 4v16m8-8H4',
+    color: 'bg-primary-600 hover:bg-primary-700 text-white',
+    href: '/transactions/new'
+  },
+  {
+    label: 'Add Account',
+    icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z',
+    color: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    href: '/accounts/new'
+  },
+  {
+    label: 'Create Budget',
+    icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
+    color: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    href: '/budgets/new'
+  }
+];
+
+const secondaryActions = [
+  {
+    label: 'Import Data',
+    icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10',
+    color: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    href: '/import'
+  },
+  {
+    label: 'Export Data',
+    icon: 'M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12',
+    color: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    href: '/export'
+  },
+  {
+    label: 'Set Goal',
+    icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z',
+    color: 'bg-gray-100 hover:bg-gray-200 text-gray-700',
+    href: '/goals/new'
+  }
+];
+
+const allActions = showFullActions ? [...primaryActions, ...secondaryActions] : primaryActions;
+---
+
+<div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+  <div class="flex items-center justify-between mb-6">
+    <h3 class="text-lg font-semibold text-gray-900">Quick Actions</h3>
+    {!showFullActions && (
+      <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">
+        More
+      </button>
+    )}
+  </div>
+  
+  <div class="space-y-3">
+    {allActions.map((action) => (
+      <a
+        href={action.href}
+        class={`flex items-center justify-center space-x-3 w-full py-3 px-4 rounded-md text-sm font-medium transition-colors ${action.color}`}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={action.icon}></path>
+        </svg>
+        <span>{action.label}</span>
+      </a>
+    ))}
+  </div>
+  
+  <div class="mt-6 pt-4 border-t border-gray-200">
+    <div class="grid grid-cols-2 gap-3 text-center">
+      <div class="p-3 bg-gray-50 rounded-lg">
+        <p class="text-lg font-bold text-gray-900">12</p>
+        <p class="text-xs text-gray-600">Transactions</p>
+        <p class="text-xs text-gray-600">This Month</p>
+      </div>
+      <div class="p-3 bg-gray-50 rounded-lg">
+        <p class="text-lg font-bold text-gray-900">4</p>
+        <p class="text-xs text-gray-600">Active</p>
+        <p class="text-xs text-gray-600">Budgets</p>
+      </div>
+    </div>
+  </div>
+</div>

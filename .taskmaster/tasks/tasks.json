@@ -2,182 +2,680 @@
   "master": {
     "tasks": [
       {
-        "id": 11,
-        "title": "Initial Project Setup and Configuration",
-        "description": "Set up the foundational project structure including the Astro.js frontend, Go backend, and Supabase project. This includes initializing repositories, configuring environment variables, and establishing the basic connection between services.",
-        "details": "Based on PRD section 4.1. Create the Supabase project, initialize the Astro.js application, and set up a basic Go API server structure. Configure Supabase client libraries in both Astro and Go.",
-        "testStrategy": "Verify that the Astro.js frontend can run locally. Verify the Go backend can run locally. Confirm that both services can successfully connect to the Supabase project using the provided credentials.",
+        "id": 1,
+        "title": "Initial Project Setup & Architecture Implementation",
+        "description": "Set up the development environment, repositories, and initial project structure based on the specified tech stack: Astro.js for frontend, Go for backend, and Supabase for BaaS (PostgreSQL, Auth).",
+        "details": "This task involves initializing the Astro.js project, creating the Go backend service structure, and configuring the Supabase project. It also includes setting up version control (Git) and establishing initial CI/CD pipelines for automated builds and deployments.",
+        "testStrategy": "Verify that the Astro.js frontend can be built and served. Confirm the Go backend compiles and runs. Ensure connectivity to the Supabase project is established successfully from both frontend and backend environments.",
         "priority": "high",
         "dependencies": [],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
-            "title": "Design and Set Up User Database Schema",
-            "description": "Create the necessary database table(s) to store user information, including credentials and profile data.",
+            "title": "Setup Git Repository and Initialize Supabase Project",
+            "description": "Create the version control repository and set up the Supabase project, which will serve as the backend-as-a-service foundation.",
             "dependencies": [],
-            "details": "The 'users' table should include columns for 'id' (primary key), 'username' (unique), 'email' (unique), 'password_hash' (string), 'created_at', and 'updated_at'. Use a database migration tool like Alembic or Flyway to manage schema changes.",
-            "status": "in-progress",
-            "testStrategy": "Verify the migration runs successfully. Manually inspect the database schema to confirm all columns and constraints are created correctly. Write a unit test to ensure the User model can be instantiated and saved to the database."
+            "details": "Initialize a new Git repository on a platform like GitHub. Create a new project in the Supabase dashboard. Securely document the Project URL, anon key, and service role key for use in subsequent steps.",
+            "status": "done",
+            "testStrategy": "Confirm the Git repository is created and cloneable. Verify the Supabase project is active in the dashboard and its API keys are accessible."
           },
           {
             "id": 2,
-            "title": "Develop User Registration API Endpoint",
-            "description": "Create a public API endpoint (e.g., POST /api/users/register) that allows new users to create an account.",
+            "title": "Initialize Astro.js Frontend Project Structure",
+            "description": "Scaffold the Astro.js frontend application, establish the basic project structure, and configure environment variables for Supabase.",
             "dependencies": [
               1
             ],
-            "details": "The endpoint must accept a username, email, and password. It should validate the input (e.g., password strength, valid email format), check for existing username/email, hash the password using bcrypt, and save the new user to the database. Return a success message or user object upon successful registration.",
-            "status": "pending",
-            "testStrategy": "Write integration tests to cover: successful registration, registration with a duplicate username, registration with a duplicate email, registration with an invalid email format, and registration with a weak password. Ensure passwords are not returned in the API response."
+            "details": "Use the `create astro@latest` command to initialize the project. Set up a basic folder structure for components, layouts, and pages. Create a `.env` file and populate it with the Supabase URL and anon key from the previous step.",
+            "status": "done",
+            "testStrategy": "Run `npm run dev` and confirm the default Astro starter page loads correctly in a browser. Verify that the Supabase environment variables can be accessed within the application context."
           },
           {
             "id": 3,
-            "title": "Implement User Login and Session Management",
-            "description": "Create an API endpoint (e.g., POST /api/auth/login) for users to log in and receive an authentication token.",
+            "title": "Initialize Go Backend Service Structure",
+            "description": "Create the initial file and directory structure for the Go backend service, including a basic HTTP server and configuration management.",
             "dependencies": [
               1
             ],
-            "details": "The endpoint should accept a username/email and a password. It will find the user in the database, compare the provided password with the stored hash, and if they match, generate a JSON Web Token (JWT). The JWT should contain the user ID and an expiration date. The token is returned to the client.",
-            "status": "pending",
-            "testStrategy": "Write integration tests for: successful login with correct credentials, failed login with incorrect password, and failed login with a non-existent user. Test that a valid JWT is returned on success. Write a unit test for the JWT generation and verification logic."
+            "details": "Set up a standard Go project using `go mod init`. Create a `cmd` directory for the main application entry point and an `internal` directory for business logic. Implement a minimal HTTP server with a `/health` check endpoint. Configure it to read Supabase connection details from environment variables.",
+            "status": "done",
+            "testStrategy": "Compile and run the Go application using `go run .`. Make a request to the `/health` endpoint and verify it returns a 200 OK status code."
           },
           {
             "id": 4,
-            "title": "Create Protected Routes Middleware",
-            "description": "Implement middleware to protect certain API endpoints, ensuring they can only be accessed by authenticated users.",
+            "title": "Establish and Verify Connectivity to Supabase",
+            "description": "Implement basic Supabase client initialization in both the Astro frontend and Go backend to confirm a successful connection can be established.",
             "dependencies": [
+              2,
               3
             ],
-            "details": "The middleware will inspect the 'Authorization' header for a 'Bearer' token. It will then validate the JWT (check signature and expiration). If the token is valid, it will extract the user ID from the payload and attach the user object to the request. If the token is invalid or missing, it will return a 401 Unauthorized error.",
-            "status": "pending",
-            "testStrategy": "Write integration tests for a sample protected endpoint. Test that access is granted with a valid token. Test that access is denied with an invalid token, an expired token, and no token. Ensure the correct user information is available in the request context after successful authentication."
+            "details": "In the Astro project, install `@supabase/supabase-js` and create a shared client instance. In the Go backend, use a PostgreSQL driver (e.g., `pgx`) to create a database connection pool using the Supabase connection string.",
+            "status": "done",
+            "testStrategy": "Write a test in the Go service to successfully ping the Supabase database. Create a test API route in Astro that uses the Supabase client to perform a simple, authenticated-off query (e.g., on a metadata table) to verify the connection."
+          },
+          {
+            "id": 5,
+            "title": "Configure Initial CI/CD Pipelines",
+            "description": "Set up foundational Continuous Integration pipelines for both the frontend and backend to automate builds and checks.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "Using a service like GitHub Actions, create two workflows. The frontend workflow should trigger on push/PR, install dependencies (`npm ci`), and run the build command (`npm run build`). The backend workflow should trigger on push/PR, run tests (`go test ./...`), and compile the binary (`go build`).",
+            "status": "done",
+            "testStrategy": "Push a commit to the repository and confirm that both the frontend and backend CI pipelines are triggered and complete successfully without any errors."
           }
         ]
       },
       {
-        "id": 12,
-        "title": "Implement Core Database Schema in Supabase",
-        "description": "Define and create the core database tables in Supabase PostgreSQL as specified in the PRD. This includes tables for users, profiles, accounts, transactions, categories, and budgets.",
-        "details": "Follow the data model outlined in PRD section 4.3. Create SQL migration scripts for the `profiles`, `accounts`, `transactions`, `categories`, and `budgets` tables. Establish foreign key relationships and apply necessary constraints.",
-        "testStrategy": "Review the created schema in the Supabase dashboard. Run migration scripts successfully. Verify that table structures, relationships, and constraints match the design in the PRD.",
+        "id": 2,
+        "title": "Implement User Authentication and Profile Management",
+        "description": "Develop the user registration, login, and logout functionality using Supabase Auth, and create a user profile management system.",
+        "details": "Implement email/password and at least one OAuth provider (e.g., Google) for sign-in, as described in PRD section 4.5. Create the `profiles` table to store additional user data like full name and currency preference. Ensure JWTs are handled securely in HTTP-only cookies via Astro API routes.",
+        "testStrategy": "Test user registration, login with email/password, login with OAuth, and logout flows. Verify that protected routes are inaccessible to unauthenticated users. Check that profile data can be created and updated for an authenticated user.",
         "priority": "high",
         "dependencies": [
-          11
+          1
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up `profiles` Table and New User Trigger in Supabase",
+            "description": "Create the `profiles` table in the Supabase database to store user-specific data. Implement a PostgreSQL trigger to automatically create a new profile row upon user registration, linking it to the `auth.users` table.",
+            "dependencies": [],
+            "details": "The `profiles` table must include columns for `id` (a foreign key to `auth.users.id`), `full_name` (text), and `currency_preference` (text). The trigger function will execute on any new entry in `auth.users` to populate the corresponding `profiles` row.",
+            "status": "done",
+            "testStrategy": "Verify table and trigger creation in the Supabase dashboard. Manually add a user via the Supabase UI to confirm the trigger correctly creates a profile entry."
+          },
+          {
+            "id": 2,
+            "title": "Implement Email/Password Authentication Flow",
+            "description": "Develop the UI components for user registration and login forms. Create Astro API routes to handle sign-up and sign-in requests using Supabase's email/password functions.",
+            "dependencies": [
+              1
+            ],
+            "details": "The API routes must securely handle the session/JWT returned by Supabase upon successful authentication and set it in an HTTP-only cookie. Implement form validation and user feedback for errors (e.g., invalid password, user already exists).",
+            "status": "done",
+            "testStrategy": "Test the full registration flow, including email confirmation if enabled. Test login with valid and invalid credentials. Verify the HTTP-only cookie is set correctly in the browser."
+          },
+          {
+            "id": 3,
+            "title": "Integrate Google OAuth Sign-In",
+            "description": "Configure Google as an OAuth provider in the Supabase dashboard. Implement the client-side UI and server-side callback route for the Google sign-in flow.",
+            "dependencies": [
+              1
+            ],
+            "details": "Add a 'Sign in with Google' button to the login page. The Astro API callback route will handle the server-side code exchange, retrieve the session from Supabase, and set the same HTTP-only session cookie used by the email/password flow.",
+            "status": "done",
+            "testStrategy": "Test the end-to-end Google login flow. Ensure a new user is created in `auth.users` and `profiles` on their first login. Verify that an existing user can log in successfully."
+          },
+          {
+            "id": 4,
+            "title": "Implement Logout and Secure Session Handling",
+            "description": "Create an Astro API endpoint for user logout that signs the user out of Supabase and clears the session cookie. Implement Astro middleware to protect routes by verifying the session cookie.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "The logout endpoint must call Supabase's `signOut` method and send headers to unset the HTTP-only cookie. The middleware should check for a valid session on protected pages and redirect unauthenticated users to the login page.",
+            "status": "done",
+            "testStrategy": "Test the logout button, verifying the cookie is cleared. Attempt to access a protected route while logged out (expect redirect) and while logged in (expect access)."
+          },
+          {
+            "id": 5,
+            "title": "Develop Profile Management Page and API",
+            "description": "Create a dedicated settings page where authenticated users can view and update their profile information (full name and currency preference).",
+            "dependencies": [
+              4
+            ],
+            "details": "Build a UI form pre-filled with the user's current data. Create secure Astro API endpoints (e.g., `GET /api/profile`, `PUT /api/profile`) that use the user's session to read from and write to their specific row in the `profiles` table, enforcing RLS policies.",
+            "status": "done",
+            "testStrategy": "As a logged-in user, navigate to the profile page and verify current data is displayed. Update the form, submit, and confirm the changes persist after a page reload. Verify one user cannot update another's profile."
+          }
+        ]
       },
       {
-        "id": 13,
-        "title": "Implement User Authentication and Authorization",
-        "description": "Develop the user authentication flow (sign-up, login, logout) using Supabase Auth. Implement Row Level Security (RLS) policies to ensure users can only access their own data.",
-        "details": "Based on PRD section 4.5. Create Astro.js API routes for handling authentication. Implement RLS policies on all user-specific tables (`accounts`, `transactions`, `budgets`, etc.) to restrict access based on `auth.uid()`.",
-        "testStrategy": "Unit tests for auth API routes. Manually test user registration and login. Create two separate user accounts and verify that one user cannot access the data of the other through API calls.",
+        "id": 3,
+        "title": "Design and Implement PostgreSQL Database Schema",
+        "description": "Create the database schema in Supabase PostgreSQL based on the data model defined in the PRD (section 4.3).",
+        "details": "Implement tables for `users` (via Supabase Auth), `profiles`, `accounts`, `transactions`, `categories`, `budgets`, and `goals`. Define all foreign key relationships, constraints, and necessary indexes. Implement foundational Row Level Security (RLS) policies to ensure users can only access their own data.",
+        "testStrategy": "Run migration scripts and verify that all tables, columns, and relationships are created correctly in the Supabase dashboard. Write and run tests for RLS policies to confirm data isolation between different user accounts.",
         "priority": "high",
         "dependencies": [
-          12
+          1
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Core User, Profile, and Account Tables",
+            "description": "Implement the initial SQL migration to create the `profiles` and `accounts` tables. This establishes the foundational entities for a user and their financial accounts.",
+            "dependencies": [],
+            "details": "Create the `profiles` table with a primary key that is also a foreign key to `auth.users.id`. Create the `accounts` table with columns for name, type, and balance, including a foreign key that references the user's ID.",
+            "status": "done",
+            "testStrategy": "Run the migration and verify in the Supabase dashboard that `profiles` and `accounts` tables are created with the correct columns and foreign key constraints."
+          },
+          {
+            "id": 2,
+            "title": "Implement Transaction and Category Tables",
+            "description": "Create the `transactions` and `categories` tables. Transactions are the central data points and must be linked to both an account and a category.",
+            "dependencies": [
+              1
+            ],
+            "details": "The `transactions` table must include foreign keys to the `accounts` and `categories` tables. The `categories` table will be user-specific and must contain a foreign key to the user's ID. Define appropriate columns and data types for amounts, dates, and descriptions.",
+            "status": "done",
+            "testStrategy": "Verify that the `transactions` and `categories` tables are created and that their foreign keys correctly reference the `accounts` table and the user."
+          },
+          {
+            "id": 3,
+            "title": "Define Budgeting and Goal-Setting Tables",
+            "description": "Create the `budgets` and `goals` tables to support financial planning features. Budgets will be linked to categories, and goals will be linked to the user.",
+            "dependencies": [
+              2
+            ],
+            "details": "The `budgets` table requires foreign keys to the user and the `categories` table. The `goals` table requires a foreign key to the user. Define columns for budget amounts/periods and goal targets/progress.",
+            "status": "done",
+            "testStrategy": "Run the migration and confirm the `budgets` and `goals` tables are created with the correct columns and relationships in the Supabase dashboard."
+          },
+          {
+            "id": 4,
+            "title": "Implement Row Level Security (RLS) Policies",
+            "description": "Enable RLS on all user-specific tables and create policies to ensure users can only access and modify their own data.",
+            "dependencies": [
+              1,
+              2,
+              3
+            ],
+            "details": "For each table (`profiles`, `accounts`, `transactions`, `categories`, `budgets`, `goals`), enable RLS and create policies for SELECT, INSERT, UPDATE, and DELETE operations that check `user_id = auth.uid()`.",
+            "status": "done",
+            "testStrategy": "Write and run tests for RLS policies. Use the Supabase SQL Editor to execute queries as different authenticated users to confirm data is properly isolated."
+          },
+          {
+            "id": 5,
+            "title": "Add Indexes and Finalize Migration Script",
+            "description": "Review the complete schema, add necessary indexes for performance optimization, and consolidate all SQL statements into a final, ordered migration script.",
+            "dependencies": [
+              4
+            ],
+            "details": "Add indexes on all foreign key columns and other frequently queried columns (e.g., transaction dates). Combine all table creation, constraint, and RLS policy scripts into a single, versioned Supabase migration file.",
+            "status": "done",
+            "testStrategy": "Run the final, consolidated migration script on a fresh database instance. Verify all tables, relationships, indexes, and RLS policies are created correctly."
+          }
+        ]
       },
       {
-        "id": 14,
-        "title": "Develop Account Management (CRUD)",
-        "description": "Create the API endpoints and UI components for users to manage their financial accounts. This includes adding, viewing, editing, and deleting accounts (e.g., checking, savings, credit cards).",
-        "details": "Based on PRD section 3.1 (Account Aggregation). Create PostgREST API endpoints for the `accounts` table. Build Astro.js components for a form to add/edit an account and a list to display all accounts. This task focuses on manual account entry first.",
-        "testStrategy": "API tests for CRUD operations on the `/accounts` endpoint. UI tests to ensure a logged-in user can create a new account, see it in their list, update its details, and delete it.",
+        "id": 4,
+        "title": "Develop Core Frontend UI/UX and Main Dashboard",
+        "description": "Build the main application layout, navigation, and a central dashboard using Astro.js and Tailwind CSS, adhering to the UI/UX principles in section 3.3.",
+        "details": "The dashboard should provide a high-level overview, including a Net Worth Tracker component. The UI must be responsive and mobile-first, as per section 3.4. The design should be clean, modern, and intuitive. This task focuses on the static layout and component shells before they are wired to live data.",
+        "testStrategy": "Perform visual regression testing across different browsers (Chrome, Firefox, Safari) and screen sizes (mobile, tablet, desktop). Use automated accessibility checks (e.g., Lighthouse) to ensure compliance with WCAG standards.",
         "priority": "high",
         "dependencies": [
-          13
+          2,
+          3
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Setup Base Application Layout and Global Styles",
+            "description": "Create the main application layout file in Astro.js that will serve as the shell for all pages. Configure Tailwind CSS with the project's design system (colors, typography, spacing) to enforce a clean and modern aesthetic.",
+            "dependencies": [],
+            "details": "This subtask involves creating a primary `Layout.astro` component containing the header, main content area, and footer structure. It also includes setting up the `tailwind.config.js` file with custom theme properties derived from the UI/UX principles in section 3.3.",
+            "status": "done",
+            "testStrategy": "Verify that the base layout renders correctly. Check that custom Tailwind CSS classes for colors and fonts are applied correctly. Perform an initial Lighthouse accessibility check on the empty layout."
+          },
+          {
+            "id": 2,
+            "title": "Build Responsive Main Navigation Component",
+            "description": "Develop the primary navigation component, such as a sidebar or top navigation bar, using Astro.js and Tailwind CSS. The navigation must be fully responsive and mobile-first.",
+            "dependencies": [
+              1
+            ],
+            "details": "The component should be designed to be collapsed (e.g., a hamburger menu) on mobile screens and expanded on desktop screens, as per section 3.4. It will contain static links to the main sections: Dashboard, Accounts, Transactions, and Budgets. This component will be integrated into the base layout created in subtask 1.",
+            "status": "done",
+            "testStrategy": "Test the navigation component's responsiveness across mobile, tablet, and desktop breakpoints. Verify that all navigation links are present and that the mobile menu toggle functions correctly. Visual regression tests should be run on the navigation states (open/closed, mobile/desktop)."
+          },
+          {
+            "id": 3,
+            "title": "Implement Dashboard Page and Grid Structure",
+            "description": "Create the main dashboard page file and implement a responsive grid layout using Tailwind CSS. This grid will serve as the container for all dashboard widgets.",
+            "dependencies": [
+              1,
+              2
+            ],
+            "details": "This involves creating the `pages/dashboard.astro` file which utilizes the main layout. The core of this task is to build a flexible CSS grid or flexbox layout that arranges dashboard components correctly on different screen sizes, ensuring a clean and intuitive presentation.",
+            "status": "done",
+            "testStrategy": "Verify that the dashboard page renders within the main application layout and that the grid structure is responsive. Test by placing placeholder elements and confirming they reflow correctly from a single column on mobile to a multi-column layout on desktop."
+          },
+          {
+            "id": 4,
+            "title": "Develop Static Net Worth Tracker Component Shell",
+            "description": "Build the Net Worth Tracker component as a static Astro component. This involves creating the UI shell with placeholder data and visuals.",
+            "dependencies": [
+              3
+            ],
+            "details": "Create a new `NetWorthTracker.astro` component file. Style it using Tailwind CSS to match the modern design language. It should include placeholders for a chart (e.g., an SVG or an empty div), and static text fields for 'Total Assets', 'Total Liabilities', and 'Net Worth'. This component will be placed into the dashboard grid.",
+            "status": "done",
+            "testStrategy": "Visually inspect the component on the dashboard to ensure it matches the design specifications. Check for correct styling and layout. Run accessibility checks on the component's static content."
+          },
+          {
+            "id": 5,
+            "title": "Create Placeholder Shells for Other Dashboard Widgets",
+            "description": "Develop static component shells for other key dashboard widgets, such as 'Account Summary', 'Recent Transactions', and 'Budget Overview', to populate the dashboard.",
+            "dependencies": [
+              3
+            ],
+            "details": "Based on the project's features (Tasks 5, 6, 7), create simple, static Astro components that act as visual placeholders. For example, `AccountSummary.astro` might show a list of placeholder accounts and balances. These shells will complete the static look and feel of the dashboard before data integration.",
+            "status": "done",
+            "testStrategy": "Verify that all placeholder widgets render correctly within the dashboard grid. Perform visual regression testing across different screen sizes to ensure the complete dashboard layout is responsive and visually balanced."
+          }
+        ]
       },
       {
-        "id": 15,
-        "title": "Develop Transaction Management (CRUD)",
-        "description": "Implement the functionality for users to add, view, edit, and delete individual transactions. Transactions must be linked to a specific user account and category.",
-        "details": "Based on PRD section 3.1 (Transaction Management). Create API endpoints and UI components for transaction CRUD. The UI should include a form for adding/editing transactions with fields for date, description, amount, and category.",
-        "testStrategy": "API tests for the `/transactions` endpoint. UI tests to add a transaction to an account, verify it appears in the transaction list, edit it, and delete it. Ensure transactions correctly affect account balances.",
+        "id": 5,
+        "title": "Implement Financial Account Management",
+        "description": "Allow users to add, view, edit, and delete their financial accounts (e.g., checking, savings, credit cards).",
+        "details": "Create the UI forms and views for account management. Implement the backend logic for CRUD operations on the `accounts` table, likely using the auto-generated PostgREST API from Supabase. The initial implementation will focus on manual account entry and balance tracking.",
+        "testStrategy": "End-to-end tests for creating a new account, updating its details (e.g., name, balance), and deleting it. Verify that all actions are correctly reflected in the database and are restricted to the authenticated user.",
         "priority": "high",
         "dependencies": [
-          14
+          2,
+          3
         ],
-        "status": "pending",
-        "subtasks": []
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create 'Add New Account' Form and API Integration",
+            "description": "Develop the UI form for users to manually add a new financial account, including fields for account name, type (e.g., checking, savings), and initial balance. Implement the client-side logic to call the Supabase API to create a new account record.",
+            "dependencies": [],
+            "details": "The form should handle user input validation (e.g., name is not empty, balance is a number). The API call will be an INSERT operation on the `accounts` table via the PostgREST endpoint, associating the new account with the currently authenticated user's ID.",
+            "status": "done",
+            "testStrategy": "Verify that submitting the form successfully creates a new row in the `accounts` table with the correct `user_id`, name, type, and balance. Test input validation for required fields and error handling for API failures."
+          },
+          {
+            "id": 2,
+            "title": "Develop the 'Accounts List' View",
+            "description": "Implement the UI component to display a list of all financial accounts belonging to the authenticated user. Each item in the list should show key details like the account name, type, and current balance.",
+            "dependencies": [
+              1
+            ],
+            "details": "This view will fetch data by making a SELECT request to the Supabase `accounts` table. RLS policies should automatically filter for the current user. The UI should handle loading states and the case where a user has no accounts yet.",
+            "status": "done",
+            "testStrategy": "Log in as a user with multiple accounts and verify that all of their accounts are displayed correctly. Log in as a new user and confirm the view shows an empty state or a 'add your first account' prompt."
+          },
+          {
+            "id": 3,
+            "title": "Implement 'Edit Account' Modal and Update Logic",
+            "description": "Create the UI and logic for editing an existing financial account. This includes a form, pre-filled with the selected account's data, allowing the user to update fields like the account name and type.",
+            "dependencies": [
+              2
+            ],
+            "details": "Add an 'Edit' button for each account in the list view which opens a modal or a dedicated page. Submitting the form will trigger an UPDATE request to the Supabase API for the specific account ID. The balance field should also be editable for manual tracking.",
+            "status": "done",
+            "testStrategy": "Select an account, change its name and balance, and save. Verify the change is reflected in the accounts list view and in the database. Ensure a user cannot edit an account belonging to another user."
+          },
+          {
+            "id": 4,
+            "title": "Implement 'Delete Account' Functionality with Confirmation",
+            "description": "Add the functionality for users to delete a financial account. This must include a confirmation step (e.g., a modal dialog) to prevent accidental deletion.",
+            "dependencies": [
+              2
+            ],
+            "details": "A 'Delete' button will be added to each account in the list or on the edit form. On click, a confirmation prompt will appear. Upon confirmation, a DELETE request will be sent to the Supabase API for the specific account ID.",
+            "status": "done",
+            "testStrategy": "Delete an account and confirm it is removed from the UI and the `accounts` table in the database. Test the cancellation of the delete action from the confirmation dialog."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Account State Management and Refine UI",
+            "description": "Integrate the account data into a centralized client-side state management solution. Ensure that after any CRUD operation (add, edit, delete), the UI updates automatically without requiring a full page reload. Implement loading and error states for all API interactions.",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4
+            ],
+            "details": "Use a state management library or native framework context to hold the list of accounts. All CRUD functions should update this central state. Display spinners or skeletons while data is being fetched/updated and show user-friendly error messages (e.g., toasts) if an API call fails.",
+            "status": "done",
+            "testStrategy": "Perform a create, update, and delete operation in sequence. Verify the UI updates reactively and correctly after each action without a page refresh. Manually trigger a network error for an API call and confirm that a proper error message is displayed."
+          }
+        ]
       },
       {
-        "id": 16,
+        "id": 6,
+        "title": "Develop Transaction Tracking and Management",
+        "description": "Implement functionality for users to view, add, edit, and categorize their financial transactions.",
+        "details": "Create a transaction ledger view that lists transactions for a selected account. Implement forms for manual transaction entry, including fields for amount, date, description, and category. Develop logic for transaction categorization using the `categories` table.",
+        "testStrategy": "Test the full CRUD lifecycle of a transaction. Verify that adding an expense correctly decreases the linked account balance, and adding income increases it. Test transaction filtering and searching.",
+        "priority": "high",
+        "dependencies": [
+          5
+        ],
+        "status": "done",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Define `transactions` Table and API Endpoints",
+            "description": "Create the `transactions` table schema in the Supabase database and configure the necessary API endpoints for Create, Read, Update, and Delete (CRUD) operations. This forms the backend foundation for all transaction management.",
+            "dependencies": [],
+            "details": "The `transactions` table schema must include columns for `user_id` (foreign key to `auth.users`), `account_id` (foreign key to `accounts`), `category_id` (foreign key to `categories`), `amount`, `type` (e.g., 'expense', 'income'), `description`, and `transaction_date`. Implement Row-Level Security (RLS) policies to ensure users can only access their own transactions. The API will be the auto-generated PostgREST API from Supabase.",
+            "status": "done",
+            "testStrategy": "Use an API client to test the CRUD endpoints directly. Verify RLS policies by authenticating as different users and attempting to access, create, or modify transactions belonging to others. Ensure foreign key constraints are working correctly."
+          },
+          {
+            "id": 2,
+            "title": "Implement Transaction Creation Form and Logic",
+            "description": "Develop the UI form for manually adding a new transaction. This includes creating the front-end component and the logic to handle form submission, data validation, and API communication.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a reusable form component in Astro.js with Tailwind CSS. The form must have fields for amount, date (using a date picker), description, and a dropdown to select a category. The category dropdown should be populated by fetching data from the `categories` table. On submission, the form should call the 'create' API endpoint. Implement a database function or trigger to automatically update the linked account's balance upon a new transaction entry.",
+            "status": "done",
+            "testStrategy": "Test form validation for all fields (e.g., non-zero amount, required date). Add an expense and verify the linked account's balance decreases. Add an income and verify the balance increases. Check that the new transaction appears in the database with the correct user and account IDs."
+          },
+          {
+            "id": 3,
+            "title": "Develop Transaction Ledger View",
+            "description": "Create a UI component to list all transactions for a selected financial account, displaying key details for each transaction in a clear, tabular format.",
+            "dependencies": [
+              1
+            ],
+            "details": "Build a component that fetches and displays a list of transactions for a given `account_id`. The view should be a table or a list showing the transaction date, description, category, and amount. Ensure the amount is formatted correctly (e.g., color-coded for income/expense). This view should be integrated into the account details page created in Task 5. Implement pagination to handle large numbers of transactions.",
+            "status": "done",
+            "testStrategy": "Navigate to an account with multiple transactions and verify they are all listed correctly and in a logical order (e.g., reverse chronological). Test with an account that has no transactions to ensure the view displays a user-friendly 'no transactions' message. Verify pagination works as expected."
+          },
+          {
+            "id": 4,
+            "title": "Implement Transaction Editing and Deletion",
+            "description": "Add functionality to the transaction ledger for users to edit the details of an existing transaction or delete it entirely, including confirmation prompts and balance recalculation.",
+            "dependencies": [
+              3
+            ],
+            "details": "In the transaction ledger view, add 'Edit' and 'Delete' controls for each transaction row. The 'Edit' action should open a modal pre-filled with the transaction's data, reusing the creation form component. The 'Delete' action must trigger a confirmation dialog before proceeding. Both editing (e.g., changing the amount) and deleting a transaction must trigger an update to the associated account's balance.",
+            "status": "done",
+            "testStrategy": "Edit a transaction's amount and category, save, and verify the changes are reflected in the ledger and the account balance is correctly updated. Delete a transaction, confirm the action, and verify it is removed from the ledger and the account balance is recalculated correctly."
+          },
+          {
+            "id": 5,
+            "title": "Implement Transaction Filtering and Search",
+            "description": "Enhance the transaction ledger view with controls to filter transactions by date range and category, and a search bar to find transactions by their description.",
+            "dependencies": [
+              3
+            ],
+            "details": "Add UI controls to the ledger view: two date pickers for a date range, a multi-select dropdown for categories (populated from the `categories` table), and a text input for searching the description field. Update the data-fetching logic to incorporate these filter parameters into the API request sent to Supabase, allowing for dynamic filtering on the backend.",
+            "status": "done",
+            "testStrategy": "Test each filter individually: filter by a date range, filter by a single category, and search for a keyword. Then, test a combination of filters (e.g., transactions in a specific category from last month containing the word 'coffee'). Verify that the results are accurate and the UI updates correctly."
+          }
+        ]
+      },
+      {
+        "id": 7,
         "title": "Implement Core Budgeting Tools",
-        "description": "Allow users to create and manage budgets for specific spending categories. The system should track spending against these budgets and provide visual feedback.",
-        "details": "Based on PRD section 3.1 (Budgeting Tools). Create API and UI for the `budgets` table. Users should be able to set a monthly amount for a category. The UI should display a list of budgets with progress bars showing spending vs. budgeted amount.",
-        "testStrategy": "API tests for budget CRUD. UI tests to create a budget for 'Groceries'. Add transactions in the 'Groceries' category and verify the budget progress bar updates correctly.",
+        "description": "Develop the core budgeting feature, allowing users to create monthly budgets for different categories, set spending limits, and track their spending against the budget.",
+        "status": "done",
+        "dependencies": [
+          6
+        ],
         "priority": "high",
-        "dependencies": [
-          15
-        ],
-        "status": "pending",
-        "subtasks": []
+        "details": "This includes creating the UI for setting up budgets per category, and visual indicators (e.g., progress bars, color-coding) to show budget progress on the dashboard. The backend will calculate total spending per category for the budget period and compare it against the budgeted amount.",
+        "testStrategy": "Create a budget for a category and add multiple transactions to that category. Verify that the budget tracking UI updates correctly and accurately reflects the remaining budget. Test edge cases like transactions on the budget period's start/end dates.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Create Budget Database Schema and Models",
+            "description": "Define and create the database table(s) for storing budget information, including links to users and categories.",
+            "dependencies": [],
+            "details": "Create a 'budgets' table with columns for 'id', 'user_id' (FK), 'category_id' (FK), 'amount' (numeric), 'period_start' (date), and 'period_end' (date). Ensure RLS policies are in place so users can only access their own budgets. Create corresponding data models in the application.",
+            "status": "done",
+            "testStrategy": "Run a database migration to create the 'budgets' table. Verify the schema, constraints, and RLS policies are correct. Write unit tests for the data model to ensure it can create and read budget records."
+          },
+          {
+            "id": 2,
+            "title": "Implement Budget Creation and Management API Endpoints",
+            "description": "Develop API endpoints (e.g., using PostgREST or a custom backend) for creating, reading, updating, and deleting budgets (CRUD).",
+            "dependencies": [
+              1
+            ],
+            "details": "Expose CRUD endpoints for the 'budgets' table. For example: POST /budgets to create, GET /budgets to list, PUT /budgets?id=eq.{id} to update, and DELETE /budgets?id=eq.{id} to delete. Ensure all endpoints are protected and respect RLS policies.",
+            "status": "done",
+            "testStrategy": "Write integration tests for each CRUD endpoint. Test creating a budget, retrieving it, updating the amount, and deleting it. Verify that a user cannot access or modify another user's budgets."
+          },
+          {
+            "id": 3,
+            "title": "Create Budget Tracking and Calculation Logic",
+            "description": "Develop the backend logic to calculate current spending against a budget for a given period.",
+            "dependencies": [
+              1
+            ],
+            "details": "Create a database function or a backend service endpoint that takes a budget ID as input. The logic should sum all transactions within the budget's category and date range. It should return the budgeted amount, the total spent amount, and the remaining amount.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the calculation logic. Test with various scenarios: no spending, spending under budget, spending exactly at budget, and spending over budget. Verify calculations with transactions that fall on the exact start/end dates of the budget period."
+          },
+          {
+            "id": 4,
+            "title": "Build Budget Management UI Components",
+            "description": "Create the user interface components for users to set, view, and manage their budgets.",
+            "dependencies": [
+              2
+            ],
+            "details": "Develop frontend components (e.g., in Astro.js/React) that include a form for creating/editing a budget (selecting a category, setting an amount). Create a view to list all current budgets. Wire these components to the API endpoints from subtask 2.",
+            "status": "done",
+            "testStrategy": "Perform end-to-end UI testing. Create a budget using the form and verify it appears in the list. Edit an existing budget and confirm the changes are saved. Delete a budget and ensure it is removed from the UI."
+          },
+          {
+            "id": 5,
+            "title": "Integrate Budget Progress Visualization on Dashboard",
+            "description": "Display budget progress visually on the main user dashboard.",
+            "dependencies": [
+              3,
+              4
+            ],
+            "details": "On the dashboard, fetch the budget tracking data for each of the user's budgets using the logic from subtask 3. Display this information using visual elements like progress bars. The color of the progress bar should change based on spending (e.g., green for under budget, yellow for approaching, red for over budget).",
+            "status": "done",
+            "testStrategy": "Manually test the dashboard UI. Add transactions that affect a budget and verify the progress bar updates in real-time (if applicable) or on refresh. Check that the color-coding logic works as expected when spending crosses defined thresholds."
+          }
+        ]
       },
       {
-        "id": 17,
-        "title": "Design and Build Main Dashboard UI",
-        "description": "Create the main dashboard page that serves as the user's primary landing page after login. It should provide a high-level overview of their financial health.",
-        "details": "Based on PRD section 3.3. Use Astro.js and Tailwind CSS to build a clean, responsive dashboard layout. Initially, this will include placeholders for key components like Net Worth, Budget Summary, and Recent Transactions.",
-        "testStrategy": "Manual UI review across different screen sizes (desktop, tablet, mobile) to ensure responsiveness. Verify that navigation is intuitive and the layout is clean and uncluttered.",
+        "id": 8,
+        "title": "Build Custom Go Backend API for Advanced Logic",
+        "description": "Develop the Go backend service to handle complex business logic, reporting, and calculations that are not suitable for PostgREST.",
+        "status": "done",
+        "dependencies": [
+          2,
+          3
+        ],
         "priority": "medium",
-        "dependencies": [
-          13
-        ],
-        "status": "pending",
-        "subtasks": []
+        "details": "As per PRD section 4.4, this API will provide endpoints for tasks like generating a monthly spending summary report. The service must validate JWTs to secure its endpoints and will interact with the Supabase database to fetch and process data.",
+        "testStrategy": "Write unit tests for the business logic in the Go service. Create integration tests for the API endpoints, mocking requests and verifying the responses for accuracy and correct data structure. Test authentication middleware.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Go Project Structure and Dependencies",
+            "description": "Initialize the Go module, establish a clean project layout (e.g., cmd, internal, pkg), and add necessary dependencies like a web framework (e.g., Gin, Chi), a database driver (e.g., pgx), and a JWT library.",
+            "dependencies": [],
+            "details": "Create a standard Go project structure. Use `go mod init` and `go get` to manage dependencies. The structure should separate API handlers, business logic, and data models for maintainability.",
+            "status": "done",
+            "testStrategy": "Verify that the project compiles and a basic 'hello world' endpoint is reachable. Ensure all dependencies are correctly listed in `go.mod`."
+          },
+          {
+            "id": 2,
+            "title": "Create Database Connection and Models",
+            "description": "Implement the logic to connect to the Supabase PostgreSQL database and define Go structs to represent the database tables (e.g., transactions, accounts).",
+            "dependencies": [
+              1
+            ],
+            "details": "Use environment variables for database credentials. Create a database package to handle the connection pool. Define Go structs with appropriate tags for database mapping (e.g., `db:\"column_name\"`).",
+            "status": "done",
+            "testStrategy": "Write a test to confirm a successful connection to the database. Write unit tests for the data models to ensure they correctly map to the database schema."
+          },
+          {
+            "id": 3,
+            "title": "Implement JWT Authentication Middleware",
+            "description": "Create middleware to secure API endpoints by validating JWTs issued by Supabase Auth.",
+            "dependencies": [
+              1
+            ],
+            "details": "The middleware must extract the token from the 'Authorization' header. It needs to fetch the Supabase JWKS (JSON Web Key Set) to validate the token's signature. If valid, extract user claims and add them to the request context.",
+            "status": "done",
+            "testStrategy": "Create a protected test endpoint. Write integration tests to verify that requests with a valid Supabase JWT are allowed, while requests with invalid, expired, or missing tokens are rejected with a 401 Unauthorized status."
+          },
+          {
+            "id": 4,
+            "title": "Build Monthly Spending Summary Report Endpoint",
+            "description": "Develop a protected API endpoint (e.g., GET /api/reports/monthly-summary) that calculates and returns a user's spending summary for a given month.",
+            "dependencies": [
+              2,
+              3
+            ],
+            "details": "The endpoint should accept a month/year as query parameters. It will query the `transactions` table for the authenticated user, group transactions by category, and sum the amounts. The response should be a JSON object detailing spending per category.",
+            "status": "done",
+            "testStrategy": "Write unit tests for the summary calculation logic. Write integration tests for the endpoint, using a test user and mock transaction data, to verify the accuracy of the returned summary report and correct access control."
+          },
+          {
+            "id": 5,
+            "title": "Create Advanced Analytics and Reporting Endpoints",
+            "description": "Implement additional endpoints for more complex analytics, such as spending trends over time or cash flow analysis.",
+            "dependencies": [
+              4
+            ],
+            "details": "Example endpoints could include GET /api/reports/spending-trends which compares spending across several months, or GET /api/reports/cash-flow. These endpoints will perform more complex SQL queries and data aggregation.",
+            "status": "done",
+            "testStrategy": "For each new endpoint, write integration tests with varied datasets to cover different scenarios (e.g., months with no spending, trends going up/down). Validate the response structure and data accuracy."
+          }
+        ]
       },
       {
-        "id": 18,
-        "title": "Implement Net Worth Tracker Component",
-        "description": "Develop the backend logic and frontend component to calculate and display the user's total net worth. This is calculated by summing the balances of all asset accounts and subtracting liabilities.",
-        "details": "Based on PRD section 3.1 (Net Worth Tracker). Create a Go API endpoint or a PostgreSQL RPC function exposed via PostgREST to calculate net worth. Develop a dashboard component in Astro.js to display this value.",
-        "testStrategy": "Unit test for the calculation logic. Manually add several asset and liability accounts and verify that the displayed net worth on the dashboard is calculated correctly.",
+        "id": 9,
+        "title": "Implement Goal Setting and Tracking Feature",
+        "description": "Allow users to set, track, and manage financial goals, such as saving for a vacation or paying off debt.",
+        "status": "done",
+        "dependencies": [
+          5
+        ],
         "priority": "medium",
-        "dependencies": [
-          14,
-          17
-        ],
-        "status": "pending",
-        "subtasks": []
+        "details": "This involves creating the UI and backend logic for the `goals` table. Users should be able to define a goal name, target amount, and target date. The system should provide a visual representation of their progress towards the goal.",
+        "testStrategy": "Test the creation, updating, and deletion of financial goals. Verify that the progress tracking is calculated correctly based on the `current_amount` and `target_amount` fields.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Design and Implement Goals Database Schema",
+            "description": "Create the database table and corresponding application model to store financial goals.",
+            "dependencies": [],
+            "details": "Define a 'goals' table with columns: id (PK), user_id (FK), name, target_amount, current_amount, target_date, created_at, updated_at. Use a database migration tool to apply the schema.",
+            "status": "done",
+            "testStrategy": "Manually inspect the database schema after migration. Write unit tests for the Goal model to verify data constraints."
+          },
+          {
+            "id": 2,
+            "title": "Create Backend API Endpoints for Goals CRUD Operations",
+            "description": "Develop API endpoints for creating, reading, updating, and deleting financial goals.",
+            "dependencies": [
+              1
+            ],
+            "details": "Implement protected API endpoints (e.g., GET /api/goals, POST /api/goals, PUT /api/goals/:id, DELETE /api/goals/:id). Ensure endpoints are secured and only allow users to access their own goals.",
+            "status": "done",
+            "testStrategy": "Write integration tests for each CRUD endpoint. Test successful operations, error handling for invalid data, and authorization logic."
+          },
+          {
+            "id": 3,
+            "title": "Implement Frontend Goal Creation and Management UI",
+            "description": "Build the user interface components for users to create, view, edit, and delete their goals.",
+            "dependencies": [
+              2
+            ],
+            "details": "Create a dedicated 'Goals' page in the Astro.js frontend. Develop forms for creating and editing goals, and a list view to display all active goals. Connect the UI to the backend API endpoints.",
+            "status": "done",
+            "testStrategy": "Perform end-to-end testing of the goal management flow. Verify that form validation works correctly and that UI state updates properly after API calls."
+          },
+          {
+            "id": 4,
+            "title": "Add Goal Progress Tracking and Visualization Components",
+            "description": "Create visual elements to show users their progress towards achieving their financial goals.",
+            "dependencies": [
+              3
+            ],
+            "details": "Develop a reusable UI component (e.g., a progress bar) that takes goal data (current_amount, target_amount) as input. Integrate this component into the goals list and dashboard.",
+            "status": "done",
+            "testStrategy": "Test the visualization component with various progress levels (0%, 50%, 100%). Verify that the progress calculation is correct and the visual representation updates accurately."
+          }
+        ]
       },
       {
-        "id": 19,
-        "title": "Implement Real-time Data Updates",
-        "description": "Integrate Supabase Realtime to provide live updates on the dashboard without requiring a page refresh. Changes to transactions or account balances should be reflected instantly.",
-        "details": "Based on PRD section 4.6. Use the Supabase JS client in the Astro.js frontend to subscribe to changes on the `transactions` and `accounts` tables. When a change is detected, re-fetch data or update the local state to refresh the UI.",
-        "testStrategy": "Open the app in two different browser windows. Add a transaction in one window and verify that the transaction list and account balance update automatically in the second window.",
+        "id": 10,
+        "title": "Integrate Real-time Data Sync and Notifications",
+        "description": "Use Supabase Realtime to provide live updates to financial data across the user's devices and implement an in-app notification system.",
+        "status": "done",
+        "dependencies": [
+          6,
+          7
+        ],
         "priority": "medium",
-        "dependencies": [
-          15,
-          17
-        ],
-        "status": "pending",
-        "subtasks": []
-      },
-      {
-        "id": 20,
-        "title": "Develop Goal Setting & Tracking Feature",
-        "description": "Implement the backend and frontend for users to create, track, and manage financial goals, such as saving for a vacation or paying off debt.",
-        "details": "Based on PRD section 3.2 (Advanced Features). Create the `goals` table, API, and UI components. Users should be able to define a goal with a name, target amount, and target date. The UI should show their progress towards the goal.",
-        "testStrategy": "API tests for goal CRUD. UI tests to create a savings goal, manually update the current amount, and verify that the progress visualization updates correctly.",
-        "priority": "low",
-        "dependencies": [
-          13
-        ],
-        "status": "pending",
-        "subtasks": []
+        "details": "Subscribe the Astro.js frontend to database changes on the `transactions` and `accounts` tables using the Supabase client. When data changes, the UI (e.g., account balance, transaction list) should update automatically without a page reload. Implement UI notifications for events like exceeding a budget.",
+        "testStrategy": "Open two browser windows for the same user. Perform an action in one window (e.g., add a transaction) and verify that the UI in the second window updates automatically and correctly within a few seconds. Test that notifications are triggered by the correct events.",
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Set up Supabase Realtime subscriptions for database changes",
+            "description": "Configure the frontend application to listen for real-time changes on the `transactions` and `accounts` tables using the Supabase client.",
+            "dependencies": [],
+            "details": "Enable Realtime for the `transactions` and `accounts` tables in the Supabase project settings. In the Astro.js frontend, use the Supabase JS client's `.on()` method to subscribe to INSERT, UPDATE, and DELETE events on these tables. Initial setup should just log the received events to the console to confirm the connection.",
+            "status": "done",
+            "testStrategy": "After setting up the subscription code, manually change data in the Supabase dashboard (e.g., add a transaction). Verify that the corresponding event payload is logged in the browser's developer console."
+          },
+          {
+            "id": 2,
+            "title": "Implement real-time data synchronization for transactions and accounts",
+            "description": "Connect the real-time subscriptions to the application's state management to update the UI automatically when data changes.",
+            "dependencies": [
+              1
+            ],
+            "details": "When a real-time event is received from the subscription, parse the payload. Based on the event type (INSERT, UPDATE, DELETE), update the local application state (e.g., a Svelte/React/Vue store) for transactions and accounts. This should trigger the UI to re-render with the new data.",
+            "status": "done",
+            "testStrategy": "Open the application in two browser windows. In one window, add a new transaction. Verify that the transaction list and account balance in the second window update automatically without a manual refresh. Repeat for updating and deleting transactions."
+          },
+          {
+            "id": 3,
+            "title": "Create notification system for budget alerts and goal milestones",
+            "description": "Develop a backend mechanism, possibly using Supabase Database Functions, to generate notifications for key financial events.",
+            "dependencies": [],
+            "details": "Create a `notifications` table in the database. Use Supabase Database Functions (or triggers) that run when transactions are inserted or updated. The function will check if the new transaction causes a budget to be exceeded or a goal to be reached. If so, it will insert a new record into the `notifications` table for the relevant user.",
+            "status": "done",
+            "testStrategy": "Create a database function. Set up a budget. Add a transaction that exceeds the budget limit. Verify that a new notification record is correctly created in the `notifications` table with the appropriate message and user ID."
+          },
+          {
+            "id": 4,
+            "title": "Add real-time UI updates and state management for notifications",
+            "description": "Subscribe the frontend to the new `notifications` table to display alerts to the user in real-time.",
+            "dependencies": [
+              1,
+              3
+            ],
+            "details": "Extend the real-time subscription setup to also listen for INSERT events on the `notifications` table. When a new notification is received, add it to a dedicated notifications state store in the frontend application.",
+            "status": "done",
+            "testStrategy": "With the application open, trigger a notification event (e.g., by exceeding a budget). Verify that the frontend's notification state is updated immediately with the new notification data, even if the UI component isn't visible yet."
+          },
+          {
+            "id": 5,
+            "title": "Implement notification display and user interaction features",
+            "description": "Create the UI components to display notifications, such as a toast/snackbar or a notification bell with a dropdown list.",
+            "dependencies": [
+              4
+            ],
+            "details": "Build a UI component (e.g., a notification bell icon in the header) that indicates the number of unread notifications. Clicking the bell should show a list of recent notifications. New notifications should also appear as a temporary toast/snackbar. Implement logic to mark notifications as 'read'.",
+            "status": "done",
+            "testStrategy": "Trigger a notification. Verify a toast message appears. Check that the notification bell's unread count increments. Open the notification list, confirm the new notification is present. Implement and test the 'mark as read' functionality, ensuring the count decrements and the notification's visual state changes."
+          }
+        ]
       }
     ],
     "metadata": {
-      "created": "2025-07-14T05:03:48.282Z",
-      "updated": "2025-07-14T05:14:56.800Z",
+      "created": "2025-07-14T17:43:46.657Z",
+      "updated": "2025-07-16T04:09:38.616Z",
       "description": "Tasks for master context"
     }
   }

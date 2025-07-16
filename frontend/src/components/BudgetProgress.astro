@@ -1,0 +1,290 @@
+---
+export interface Props {
+  budgetTracking?: Array<{
+    budget_id: string;
+    budget_name: string;
+    category_id: string;
+    category_name: string;
+    category_color: string;
+    category_icon: string;
+    budgeted_amount: number;
+    spent_amount: number;
+    remaining_amount: number;
+    percentage_used: number;
+    period: string;
+    start_date: string;
+    end_date?: string;
+    is_over_budget: boolean;
+    status: 'under_budget' | 'on_track' | 'over_budget';
+  }>;
+  currency?: string;
+  showChart?: boolean;
+}
+
+const { budgetTracking = [], currency = '$', showChart = true } = Astro.props;
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'text-red-600';
+    case 'on_track':
+      return 'text-yellow-600';
+    case 'under_budget':
+      return 'text-green-600';
+    default:
+      return 'text-gray-600';
+  }
+};
+
+const getProgressColor = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'bg-red-500';
+    case 'on_track':
+      return 'bg-yellow-500';
+    case 'under_budget':
+      return 'bg-green-500';
+    default:
+      return 'bg-gray-300';
+  }
+};
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'over_budget':
+      return 'Over Budget';
+    case 'on_track':
+      return 'On Track';
+    case 'under_budget':
+      return 'Under Budget';
+    default:
+      return 'No Data';
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
+};
+
+const calculateDaysRemaining = (endDate: string) => {
+  if (!endDate) return null;
+  const end = new Date(endDate);
+  const today = new Date();
+  const diffTime = end.getTime() - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
+const totalBudgeted = budgetTracking.reduce((sum, item) => sum + item.budgeted_amount, 0);
+const totalSpent = budgetTracking.reduce((sum, item) => sum + item.spent_amount, 0);
+const totalRemaining = totalBudgeted - totalSpent;
+const overallPercentage = totalBudgeted > 0 ? (totalSpent / totalBudgeted) * 100 : 0;
+
+const getOverallStatus = () => {
+  if (overallPercentage >= 100) return 'over_budget';
+  if (overallPercentage >= 80) return 'on_track';
+  return 'under_budget';
+};
+
+const overallStatus = getOverallStatus();
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200">
+  <div class="p-6 border-b border-gray-200">
+    <h2 class="text-xl font-semibold text-gray-900">Budget Progress</h2>
+  </div>
+  
+  {budgetTracking.length === 0 ? (
+    <div class="p-6 text-center">
+      <svg class="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+      </svg>
+      <p class="text-gray-500">No budget data available</p>
+    </div>
+  ) : (
+    <div class="p-6">
+      <!-- Overall Summary -->
+      <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-lg font-medium text-gray-900">Overall Budget Progress</h3>
+          <span class={`px-3 py-1 text-sm font-medium rounded-full ${
+            overallStatus === 'over_budget' ? 'bg-red-100 text-red-800' :
+            overallStatus === 'on_track' ? 'bg-yellow-100 text-yellow-800' :
+            'bg-green-100 text-green-800'
+          }`}>
+            {getStatusText(overallStatus)}
+          </span>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-4 mb-4">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">{currency}{totalBudgeted.toLocaleString()}</div>
+            <div class="text-sm text-gray-500">Total Budget</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-gray-900">{currency}{totalSpent.toLocaleString()}</div>
+            <div class="text-sm text-gray-500">Total Spent</div>
+          </div>
+          <div class="text-center">
+            <div class={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {currency}{Math.abs(totalRemaining).toLocaleString()}
+            </div>
+            <div class="text-sm text-gray-500">{totalRemaining >= 0 ? 'Remaining' : 'Over Budget'}</div>
+          </div>
+        </div>
+        
+        <div class="w-full bg-gray-200 rounded-full h-3">
+          <div
+            class={`h-3 rounded-full transition-all duration-300 ${getProgressColor(overallStatus)}`}
+            style={`width: ${Math.min(overallPercentage, 100)}%`}
+          ></div>
+        </div>
+        
+        <div class="flex justify-between items-center mt-2">
+          <span class="text-sm text-gray-600">{Math.round(overallPercentage)}% of budget used</span>
+          <span class="text-sm text-gray-600">{budgetTracking.length} active budgets</span>
+        </div>
+      </div>
+      
+      <!-- Individual Budget Progress -->
+      <div class="space-y-4">
+        <h4 class="text-lg font-medium text-gray-900">Individual Budgets</h4>
+        
+        {budgetTracking.map((item) => {
+          const daysRemaining = calculateDaysRemaining(item.end_date);
+          
+          return (
+            <div class="border border-gray-200 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center space-x-3">
+                  <div
+                    class="w-3 h-3 rounded-full"
+                    style={`background-color: ${item.category_color}`}
+                  ></div>
+                  <div>
+                    <h5 class="font-medium text-gray-900">{item.budget_name}</h5>
+                    <p class="text-sm text-gray-500 flex items-center space-x-1">
+                      <span>{item.category_icon}</span>
+                      <span>{item.category_name}</span>
+                      <span>•</span>
+                      <span>{item.period}</span>
+                    </p>
+                  </div>
+                </div>
+                
+                <div class="text-right">
+                  <div class="text-lg font-semibold text-gray-900">
+                    {currency}{item.spent_amount.toLocaleString()} / {currency}{item.budgeted_amount.toLocaleString()}
+                  </div>
+                  <div class={`text-sm ${getStatusColor(item.status)}`}>
+                    {Math.round(item.percentage_used)}% • {getStatusText(item.status)}
+                  </div>
+                </div>
+              </div>
+              
+              <div class="w-full bg-gray-200 rounded-full h-2 mb-3">
+                <div
+                  class={`h-2 rounded-full transition-all duration-300 ${getProgressColor(item.status)}`}
+                  style={`width: ${Math.min(item.percentage_used, 100)}%`}
+                ></div>
+              </div>
+              
+              <div class="flex justify-between items-center text-sm">
+                <div class="flex items-center space-x-4">
+                  <span class={item.remaining_amount >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    {item.remaining_amount >= 0 
+                      ? `${currency}${item.remaining_amount.toLocaleString()} remaining`
+                      : `Over by ${currency}${Math.abs(item.remaining_amount).toLocaleString()}`
+                    }
+                  </span>
+                  {daysRemaining !== null && (
+                    <span class="text-gray-500">
+                      {daysRemaining > 0 
+                        ? `${daysRemaining} days left`
+                        : daysRemaining === 0 
+                          ? 'Ends today'
+                          : `Ended ${Math.abs(daysRemaining)} days ago`
+                      }
+                    </span>
+                  )}
+                </div>
+                
+                <div class="text-gray-500">
+                  {formatDate(item.start_date)} - {item.end_date ? formatDate(item.end_date) : 'Ongoing'}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  )}
+</div>
+
+{showChart && budgetTracking.length > 0 && (
+  <div class="mt-6 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div class="p-6 border-b border-gray-200">
+      <h3 class="text-lg font-semibold text-gray-900">Budget Visualization</h3>
+    </div>
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Budget vs Spent Chart -->
+        <div class="space-y-4">
+          <h4 class="text-md font-medium text-gray-900">Budget vs Spent</h4>
+          {budgetTracking.map((item) => (
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm">
+                <span class="text-gray-700">{item.category_name}</span>
+                <span class="text-gray-600">{Math.round(item.percentage_used)}%</span>
+              </div>
+              <div class="flex space-x-2">
+                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                  <div
+                    class={`h-2 rounded-full ${getProgressColor(item.status)}`}
+                    style={`width: ${Math.min(item.percentage_used, 100)}%`}
+                  ></div>
+                </div>
+                <span class="text-xs text-gray-500 w-16 text-right">
+                  {currency}{item.spent_amount.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <!-- Status Distribution -->
+        <div class="space-y-4">
+          <h4 class="text-md font-medium text-gray-900">Status Distribution</h4>
+          <div class="space-y-3">
+            {['under_budget', 'on_track', 'over_budget'].map((status) => {
+              const count = budgetTracking.filter(item => item.status === status).length;
+              const percentage = budgetTracking.length > 0 ? (count / budgetTracking.length) * 100 : 0;
+              
+              return (
+                <div class="flex items-center space-x-3">
+                  <div class={`w-4 h-4 rounded-full ${getProgressColor(status)}`}></div>
+                  <div class="flex-1">
+                    <div class="flex justify-between text-sm">
+                      <span class="text-gray-700">{getStatusText(status)}</span>
+                      <span class="text-gray-600">{count} budgets</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        class={`h-2 rounded-full ${getProgressColor(status)}`}
+                        style={`width: ${percentage}%`}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}

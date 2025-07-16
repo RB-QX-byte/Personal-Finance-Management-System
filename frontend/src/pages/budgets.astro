@@ -1,0 +1,196 @@
+---
+import Layout from '../layouts/Layout.astro';
+import BudgetList from '../components/BudgetList.astro';
+import BudgetProgress from '../components/BudgetProgress.astro';
+import { supabase } from '../lib/supabase';
+
+// Check authentication
+const cookies = Astro.cookies;
+const accessToken = cookies.get('sb-access-token')?.value;
+
+if (!accessToken) {
+  return Astro.redirect('/login');
+}
+
+// Get user
+const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+
+if (userError || !user) {
+  return Astro.redirect('/login');
+}
+
+// Fetch budgets
+const { data: budgets, error: budgetsError } = await supabase
+  .from('budgets')
+  .select(`
+    *,
+    categories(id, name, color, icon)
+  `)
+  .eq('user_id', user.id)
+  .order('created_at', { ascending: false });
+
+// Fetch categories for the budget form
+const { data: categories, error: categoriesError } = await supabase
+  .from('categories')
+  .select('id, name, color, icon')
+  .eq('user_id', user.id)
+  .eq('is_active', true)
+  .order('name', { ascending: true });
+
+// Fetch budget tracking data
+let budgetTracking = [];
+if (budgets && budgets.length > 0) {
+  try {
+    const trackingPromises = budgets.map(async (budget) => {
+      const budgetStartDate = budget.start_date;
+      const budgetEndDate = budget.end_date || new Date().toISOString().split('T')[0];
+
+      const { data: transactions } = await supabase
+        .from('transactions')
+        .select('amount, transaction_type')
+        .eq('user_id', user.id)
+        .eq('category_id', budget.category_id)
+        .gte('transaction_date', budgetStartDate)
+        .lte('transaction_date', budgetEndDate)
+        .eq('transaction_type', 'expense');
+
+      const spentAmount = transactions?.reduce((total, transaction) => {
+        return total + Math.abs(parseFloat(transaction.amount));
+      }, 0) || 0;
+
+      const budgetedAmount = parseFloat(budget.amount);
+      const remainingAmount = budgetedAmount - spentAmount;
+      const percentageUsed = budgetedAmount > 0 ? (spentAmount / budgetedAmount) * 100 : 0;
+      const isOverBudget = spentAmount > budgetedAmount;
+
+      let status;
+      if (isOverBudget) {
+        status = 'over_budget';
+      } else if (percentageUsed >= 80) {
+        status = 'on_track';
+      } else {
+        status = 'under_budget';
+      }
+
+      return {
+        budget_id: budget.id,
+        budget_name: budget.name,
+        category_id: budget.category_id,
+        category_name: budget.categories?.name || '',
+        category_color: budget.categories?.color || '#6366f1',
+        category_icon: budget.categories?.icon || '',
+        budgeted_amount: budgetedAmount,
+        spent_amount: spentAmount,
+        remaining_amount: remainingAmount,
+        percentage_used: Math.round(percentageUsed * 100) / 100,
+        period: budget.period,
+        start_date: budget.start_date,
+        end_date: budget.end_date,
+        is_over_budget: isOverBudget,
+        status,
+      };
+    });
+
+    budgetTracking = await Promise.all(trackingPromises);
+  } catch (error) {
+    console.error('Error calculating budget tracking:', error);
+  }
+}
+
+const pageTitle = 'Budgets';
+---
+
+<Layout title={pageTitle}>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">{pageTitle}</h1>
+        <p class="mt-2 text-gray-600">Manage your budgets and track your spending</p>
+      </div>
+      
+      <!-- Budget Progress Overview -->
+      <div class="mb-8">
+        <BudgetProgress budgetTracking={budgetTracking} currency="$" />
+      </div>
+      
+      <!-- Budget List -->
+      <BudgetList 
+        budgets={budgets || []} 
+        budgetTracking={budgetTracking} 
+        currency="$" 
+      />
+    </div>
+  </div>
+</Layout>
+
+<style>
+  /* Custom styles for the budgets page */
+  .budget-card {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .budget-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .progress-bar {
+    transition: width 0.3s ease-in-out;
+  }
+  
+  .budget-status {
+    animation: pulse 2s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+</style>
+
+<script>
+  // Auto-refresh budget data every 30 seconds
+  setInterval(async () => {
+    try {
+      const response = await fetch('/api/budget-tracking');
+      if (response.ok) {
+        const data = await response.json();
+        // Update the UI with new data
+        updateBudgetDisplay(data);
+      }
+    } catch (error) {
+      console.error('Error refreshing budget data:', error);
+    }
+  }, 30000);
+  
+  function updateBudgetDisplay(budgetData) {
+    // Update progress bars and amounts
+    budgetData.forEach(budget => {
+      const budgetCard = document.querySelector(`[data-budget-id="${budget.budget_id}"]`);
+      if (budgetCard) {
+        // Update spent amount
+        const spentElement = budgetCard.querySelector('.spent-amount');
+        if (spentElement) {
+          spentElement.textContent = `$${budget.spent_amount.toLocaleString()}`;
+        }
+        
+        // Update progress bar
+        const progressBar = budgetCard.querySelector('.progress-bar');
+        if (progressBar) {
+          progressBar.style.width = `${Math.min(budget.percentage_used, 100)}%`;
+        }
+        
+        // Update status
+        const statusElement = budgetCard.querySelector('.budget-status');
+        if (statusElement) {
+          statusElement.textContent = budget.status.replace('_', ' ').toUpperCase();
+        }
+      }
+    });
+  }
+</script>

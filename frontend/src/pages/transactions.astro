@@ -1,0 +1,1089 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<Layout title="Transactions - Personal Finance Manager">
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Transactions</h1>
+            <p class="text-sm text-gray-600 mt-1">Track your income and expenses</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button 
+              id="add-transaction-btn"
+              class="bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium py-2 px-4 rounded-md transition-colors"
+            >
+              Add Transaction
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label for="account-filter" class="block text-sm font-medium text-gray-700 mb-1">
+              Account
+            </label>
+            <select
+              id="account-filter"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">All Accounts</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="category-filter" class="block text-sm font-medium text-gray-700 mb-1">
+              Category
+            </label>
+            <select
+              id="category-filter"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">All Categories</option>
+            </select>
+          </div>
+          
+          <div>
+            <label for="start-date" class="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              id="start-date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          
+          <div>
+            <label for="end-date" class="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              id="end-date"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+        
+        <div class="mt-4">
+          <label for="search-input" class="block text-sm font-medium text-gray-700 mb-1">
+            Search Description
+          </label>
+          <div class="relative">
+            <input
+              type="text"
+              id="search-input"
+              placeholder="Search transactions..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-4 flex space-x-3">
+          <button 
+            id="apply-filters-btn"
+            class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          >
+            Apply Filters
+          </button>
+          <button 
+            id="clear-filters-btn"
+            class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-8">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+        <p class="text-gray-600 mt-2">Loading transactions...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-12">
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+            </svg>
+          </div>
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">No transactions found</h3>
+          <p class="text-gray-600 mb-4">Start tracking your finances by adding your first transaction</p>
+          <button 
+            id="add-first-transaction-btn"
+            class="bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-md text-sm font-medium transition-colors"
+          >
+            Add Your First Transaction
+          </button>
+        </div>
+      </div>
+
+      <!-- Transactions Table -->
+      <div id="transactions-table" class="hidden bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Description
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Account
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody id="transactions-tbody" class="bg-white divide-y divide-gray-200">
+              <!-- Transaction rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div id="pagination" class="bg-gray-50 px-4 py-3 border-t border-gray-200 sm:px-6">
+          <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button 
+                id="prev-mobile"
+                class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button 
+                id="next-mobile"
+                class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing <span id="showing-from">1</span> to <span id="showing-to">50</span> of <span id="total-count">100</span> transactions
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                  <button 
+                    id="prev-desktop"
+                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  <button 
+                    id="next-desktop"
+                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Container -->
+  <div id="modal-container"></div>
+</Layout>
+
+<script>
+  interface Transaction {
+    id: string;
+    amount: number;
+    transaction_type: string;
+    description: string;
+    transaction_date: string;
+    notes?: string;
+    accounts: {
+      name: string;
+      account_type: string;
+    };
+    categories?: {
+      name: string;
+      color: string;
+    };
+  }
+
+  let transactions: Transaction[] = [];
+  let currentPage = 0;
+  const pageSize = 50;
+  let totalCount = 0;
+  let filters = {
+    account_id: '',
+    category_id: '',
+    start_date: '',
+    end_date: '',
+    search: ''
+  };
+
+  const loadingState = document.getElementById('loading-state');
+  const emptyState = document.getElementById('empty-state');
+  const transactionsTable = document.getElementById('transactions-table');
+  const transactionsTbody = document.getElementById('transactions-tbody');
+  const addTransactionBtn = document.getElementById('add-transaction-btn');
+  const addFirstTransactionBtn = document.getElementById('add-first-transaction-btn');
+  const modalContainer = document.getElementById('modal-container');
+
+  // Filter controls
+  const accountFilter = document.getElementById('account-filter') as HTMLSelectElement;
+  const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+  const startDateInput = document.getElementById('start-date') as HTMLInputElement;
+  const endDateInput = document.getElementById('end-date') as HTMLInputElement;
+  const searchInput = document.getElementById('search-input') as HTMLInputElement;
+  const applyFiltersBtn = document.getElementById('apply-filters-btn');
+  const clearFiltersBtn = document.getElementById('clear-filters-btn');
+
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  }
+
+  function formatDate(dateString: string): string {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+
+  function getTransactionTypeColor(type: string): string {
+    switch (type) {
+      case 'income':
+        return 'text-green-600';
+      case 'expense':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  }
+
+  function renderTransactionRow(transaction: Transaction): string {
+    const amountClass = getTransactionTypeColor(transaction.transaction_type);
+    const formattedAmount = transaction.transaction_type === 'expense' 
+      ? `-${formatCurrency(transaction.amount)}`
+      : `+${formatCurrency(transaction.amount)}`;
+
+    return `
+      <tr class="hover:bg-gray-50">
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          ${formatDate(transaction.transaction_date)}
+        </td>
+        <td class="px-6 py-4 text-sm text-gray-900">
+          <div class="font-medium">${transaction.description || 'No description'}</div>
+          ${transaction.notes ? `<div class="text-gray-500 text-xs">${transaction.notes}</div>` : ''}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          ${transaction.categories ? `
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium" 
+                  style="background-color: ${transaction.categories.color}20; color: ${transaction.categories.color}">
+              ${transaction.categories.name}
+            </span>
+          ` : 'Uncategorized'}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+          ${transaction.accounts.name}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${amountClass}">
+          ${formattedAmount}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <div class="flex space-x-2">
+            <button 
+              class="edit-transaction-btn text-primary-600 hover:text-primary-700 font-medium"
+              data-transaction-id="${transaction.id}"
+            >
+              Edit
+            </button>
+            <button 
+              class="delete-transaction-btn text-red-600 hover:text-red-700 font-medium"
+              data-transaction-id="${transaction.id}"
+            >
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderTransactions() {
+    if (!transactionsTbody) return;
+
+    if (transactions.length === 0) {
+      showEmptyState();
+      return;
+    }
+
+    transactionsTbody.innerHTML = transactions.map(renderTransactionRow).join('');
+    
+    // Add event listeners to edit and delete buttons
+    document.querySelectorAll('.edit-transaction-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const transactionId = (e.target as HTMLElement).dataset.transactionId;
+        if (transactionId) {
+          editTransaction(transactionId);
+        }
+      });
+    });
+
+    document.querySelectorAll('.delete-transaction-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const transactionId = (e.target as HTMLElement).dataset.transactionId;
+        if (transactionId) {
+          deleteTransaction(transactionId);
+        }
+      });
+    });
+
+    showTransactionsTable();
+  }
+
+  function showLoadingState() {
+    loadingState?.classList.remove('hidden');
+    emptyState?.classList.add('hidden');
+    transactionsTable?.classList.add('hidden');
+  }
+
+  function showEmptyState() {
+    loadingState?.classList.add('hidden');
+    emptyState?.classList.remove('hidden');
+    transactionsTable?.classList.add('hidden');
+  }
+
+  function showTransactionsTable() {
+    loadingState?.classList.add('hidden');
+    emptyState?.classList.add('hidden');
+    transactionsTable?.classList.remove('hidden');
+  }
+
+  async function loadAccounts() {
+    try {
+      const response = await fetch('/api/accounts');
+      if (response.ok) {
+        const accounts = await response.json();
+        
+        // Clear existing options
+        accountFilter.innerHTML = '<option value="">All Accounts</option>';
+        
+        // Add account options
+        accounts.forEach((account: any) => {
+          const option = document.createElement('option');
+          option.value = account.id;
+          option.textContent = `${account.name} (${account.account_type.replace('_', ' ')})`;
+          accountFilter.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const categories = await response.json();
+        
+        // Clear existing options
+        categoryFilter.innerHTML = '<option value="">All Categories</option>';
+        
+        // Add category options
+        categories.forEach((category: any) => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          categoryFilter.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+
+  async function loadTransactions() {
+    showLoadingState();
+    
+    try {
+      const params = new URLSearchParams({
+        limit: pageSize.toString(),
+        offset: (currentPage * pageSize).toString(),
+        ...Object.fromEntries(Object.entries(filters).filter(([_, value]) => value))
+      });
+
+      const response = await fetch(`/api/transactions?${params}`);
+      if (response.ok) {
+        transactions = await response.json();
+        renderTransactions();
+      } else {
+        console.error('Failed to load transactions');
+        showEmptyState();
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+      showEmptyState();
+    }
+  }
+
+  function applyFilters() {
+    filters = {
+      account_id: accountFilter.value,
+      category_id: categoryFilter.value,
+      start_date: startDateInput.value,
+      end_date: endDateInput.value,
+      search: searchInput.value
+    };
+    currentPage = 0;
+    loadTransactions();
+  }
+
+  function clearFilters() {
+    accountFilter.value = '';
+    categoryFilter.value = '';
+    startDateInput.value = '';
+    endDateInput.value = '';
+    searchInput.value = '';
+    filters = {
+      account_id: '',
+      category_id: '',
+      start_date: '',
+      end_date: '',
+      search: ''
+    };
+    currentPage = 0;
+    loadTransactions();
+  }
+
+  async function showAddTransactionModal() {
+    if (modalContainer) {
+      // Load the AddTransactionForm component dynamically
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="add-transaction-modal">
+          <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Add New Transaction</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" id="close-modal">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <form id="add-transaction-form" class="space-y-4">
+                <div>
+                  <label for="transaction-account" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account *
+                  </label>
+                  <select
+                    id="transaction-account"
+                    name="account_id"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select account</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="transaction-type" class="block text-sm font-medium text-gray-700 mb-1">
+                    Transaction Type *
+                  </label>
+                  <select
+                    id="transaction-type"
+                    name="transaction_type"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select type</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="transaction-amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    Amount *
+                  </label>
+                  <input
+                    type="number"
+                    id="transaction-amount"
+                    name="amount"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label for="transaction-category" class="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    id="transaction-category"
+                    name="category_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="transaction-date" class="block text-sm font-medium text-gray-700 mb-1">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="transaction-date"
+                    name="transaction_date"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label for="transaction-description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    id="transaction-description"
+                    name="description"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="What was this transaction for?"
+                  />
+                </div>
+
+                <div>
+                  <label for="transaction-notes" class="block text-sm font-medium text-gray-700 mb-1">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    id="transaction-notes"
+                    name="notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Additional notes..."
+                  ></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    id="cancel-btn"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+                  >
+                    Add Transaction
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Initialize the modal functionality
+      const modal = document.getElementById('add-transaction-modal');
+      const form = document.getElementById('add-transaction-form') as HTMLFormElement;
+      const closeBtn = document.getElementById('close-modal');
+      const cancelBtn = document.getElementById('cancel-btn');
+      const accountSelect = document.getElementById('transaction-account') as HTMLSelectElement;
+      const categorySelect = document.getElementById('transaction-category') as HTMLSelectElement;
+      const dateInput = document.getElementById('transaction-date') as HTMLInputElement;
+
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.value = today;
+
+      function closeModal() {
+        modal?.remove();
+      }
+
+      function showError(message: string) {
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+          existingError.remove();
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.textContent = message;
+        form.insertBefore(errorDiv, form.firstChild);
+      }
+
+      function showSuccess(message: string) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+        successDiv.textContent = message;
+        form.insertBefore(successDiv, form.firstChild);
+      }
+
+      async function loadModalAccounts() {
+        try {
+          const response = await fetch('/api/accounts');
+          if (response.ok) {
+            const accounts = await response.json();
+            
+            accountSelect.innerHTML = '<option value="">Select account</option>';
+            
+            accounts.forEach((account: any) => {
+              const option = document.createElement('option');
+              option.value = account.id;
+              option.textContent = `${account.name} (${account.account_type.replace('_', ' ')})`;
+              accountSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading accounts:', error);
+        }
+      }
+
+      async function loadModalCategories() {
+        try {
+          const response = await fetch('/api/categories');
+          if (response.ok) {
+            const categories = await response.json();
+            
+            categorySelect.innerHTML = '<option value="">Select category</option>';
+            
+            categories.forEach((category: any) => {
+              const option = document.createElement('option');
+              option.value = category.id;
+              option.textContent = category.name;
+              categorySelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading categories:', error);
+        }
+      }
+
+      closeBtn?.addEventListener('click', closeModal);
+      cancelBtn?.addEventListener('click', closeModal);
+
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+          account_id: formData.get('account_id') as string,
+          transaction_type: formData.get('transaction_type') as string,
+          amount: formData.get('amount') as string,
+          category_id: formData.get('category_id') as string,
+          transaction_date: formData.get('transaction_date') as string,
+          description: formData.get('description') as string,
+          notes: formData.get('notes') as string,
+        };
+
+        try {
+          const response = await fetch('/api/transactions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const transaction = await response.json();
+            showSuccess('Transaction added successfully!');
+            
+            // Reload transactions
+            loadTransactions();
+            
+            setTimeout(() => {
+              closeModal();
+            }, 1000);
+          } else {
+            const errorText = await response.text();
+            showError(errorText || 'Failed to add transaction');
+          }
+        } catch (error) {
+          console.error('Error adding transaction:', error);
+          showError('An unexpected error occurred. Please try again.');
+        }
+      });
+
+      // Load accounts and categories for the modal
+      loadModalAccounts();
+      loadModalCategories();
+    }
+  }
+
+  function editTransaction(transactionId: string) {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (!transaction) return;
+
+    if (modalContainer) {
+      modalContainer.innerHTML = `
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="edit-transaction-modal">
+          <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+              <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Edit Transaction</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-600" id="close-edit-modal">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              
+              <form id="edit-transaction-form" class="space-y-4">
+                <div>
+                  <label for="edit-transaction-account" class="block text-sm font-medium text-gray-700 mb-1">
+                    Account *
+                  </label>
+                  <select
+                    id="edit-transaction-account"
+                    name="account_id"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select account</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="edit-transaction-type" class="block text-sm font-medium text-gray-700 mb-1">
+                    Transaction Type *
+                  </label>
+                  <select
+                    id="edit-transaction-type"
+                    name="transaction_type"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select type</option>
+                    <option value="income" ${transaction.transaction_type === 'income' ? 'selected' : ''}>Income</option>
+                    <option value="expense" ${transaction.transaction_type === 'expense' ? 'selected' : ''}>Expense</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="edit-transaction-amount" class="block text-sm font-medium text-gray-700 mb-1">
+                    Amount *
+                  </label>
+                  <input
+                    type="number"
+                    id="edit-transaction-amount"
+                    name="amount"
+                    step="0.01"
+                    min="0.01"
+                    value="${transaction.amount}"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-transaction-category" class="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    id="edit-transaction-category"
+                    name="category_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  >
+                    <option value="">Select category</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="edit-transaction-date" class="block text-sm font-medium text-gray-700 mb-1">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    id="edit-transaction-date"
+                    name="transaction_date"
+                    value="${transaction.transaction_date}"
+                    required
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-transaction-description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <input
+                    type="text"
+                    id="edit-transaction-description"
+                    name="description"
+                    value="${transaction.description || ''}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="What was this transaction for?"
+                  />
+                </div>
+
+                <div>
+                  <label for="edit-transaction-notes" class="block text-sm font-medium text-gray-700 mb-1">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    id="edit-transaction-notes"
+                    name="notes"
+                    rows="3"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    placeholder="Additional notes..."
+                  >${transaction.notes || ''}</textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    id="cancel-edit-btn"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+                  >
+                    Update Transaction
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      // Initialize the edit modal functionality
+      const modal = document.getElementById('edit-transaction-modal');
+      const form = document.getElementById('edit-transaction-form') as HTMLFormElement;
+      const closeBtn = document.getElementById('close-edit-modal');
+      const cancelBtn = document.getElementById('cancel-edit-btn');
+      const accountSelect = document.getElementById('edit-transaction-account') as HTMLSelectElement;
+      const categorySelect = document.getElementById('edit-transaction-category') as HTMLSelectElement;
+
+      function closeModal() {
+        modal?.remove();
+      }
+
+      function showError(message: string) {
+        const existingError = document.querySelector('.error-message');
+        if (existingError) {
+          existingError.remove();
+        }
+
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+        errorDiv.textContent = message;
+        form.insertBefore(errorDiv, form.firstChild);
+      }
+
+      function showSuccess(message: string) {
+        const successDiv = document.createElement('div');
+        successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+        successDiv.textContent = message;
+        form.insertBefore(successDiv, form.firstChild);
+      }
+
+      async function loadEditAccounts() {
+        try {
+          const response = await fetch('/api/accounts');
+          if (response.ok) {
+            const accounts = await response.json();
+            
+            accountSelect.innerHTML = '<option value="">Select account</option>';
+            
+            accounts.forEach((account: any) => {
+              const option = document.createElement('option');
+              option.value = account.id;
+              option.textContent = `${account.name} (${account.account_type.replace('_', ' ')})`;
+              // Select the current account
+              if (account.name === transaction.accounts.name) {
+                option.selected = true;
+              }
+              accountSelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading accounts:', error);
+        }
+      }
+
+      async function loadEditCategories() {
+        try {
+          const response = await fetch('/api/categories');
+          if (response.ok) {
+            const categories = await response.json();
+            
+            categorySelect.innerHTML = '<option value="">Select category</option>';
+            
+            categories.forEach((category: any) => {
+              const option = document.createElement('option');
+              option.value = category.id;
+              option.textContent = category.name;
+              // Select the current category
+              if (transaction.categories && category.name === transaction.categories.name) {
+                option.selected = true;
+              }
+              categorySelect.appendChild(option);
+            });
+          }
+        } catch (error) {
+          console.error('Error loading categories:', error);
+        }
+      }
+
+      closeBtn?.addEventListener('click', closeModal);
+      cancelBtn?.addEventListener('click', closeModal);
+
+      modal?.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+          id: transactionId,
+          account_id: formData.get('account_id') as string,
+          transaction_type: formData.get('transaction_type') as string,
+          amount: formData.get('amount') as string,
+          category_id: formData.get('category_id') as string,
+          transaction_date: formData.get('transaction_date') as string,
+          description: formData.get('description') as string,
+          notes: formData.get('notes') as string,
+        };
+
+        try {
+          const response = await fetch('/api/transactions', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const updatedTransaction = await response.json();
+            showSuccess('Transaction updated successfully!');
+            
+            // Update the transaction in the local array
+            const index = transactions.findIndex(t => t.id === transactionId);
+            if (index !== -1) {
+              transactions[index] = updatedTransaction;
+              renderTransactions();
+            }
+            
+            setTimeout(() => {
+              closeModal();
+            }, 1000);
+          } else {
+            const errorText = await response.text();
+            showError(errorText || 'Failed to update transaction');
+          }
+        } catch (error) {
+          console.error('Error updating transaction:', error);
+          showError('An unexpected error occurred. Please try again.');
+        }
+      });
+
+      // Load accounts and categories for the edit modal
+      loadEditAccounts();
+      loadEditCategories();
+    }
+  }
+
+  function deleteTransaction(transactionId: string) {
+    const transaction = transactions.find(t => t.id === transactionId);
+    if (!transaction) return;
+
+    if (confirm(`Are you sure you want to delete this transaction: "${transaction.description || 'No description'}"? This action cannot be undone.`)) {
+      fetch(`/api/transactions?id=${transactionId}`, {
+        method: 'DELETE',
+      })
+      .then(response => {
+        if (response.ok) {
+          // Remove transaction from local array
+          transactions = transactions.filter(t => t.id !== transactionId);
+          renderTransactions();
+        } else {
+          alert('Failed to delete transaction. Please try again.');
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting transaction:', error);
+        alert('An error occurred while deleting the transaction.');
+      });
+    }
+  }
+
+  // Event listeners
+  addTransactionBtn?.addEventListener('click', showAddTransactionModal);
+  addFirstTransactionBtn?.addEventListener('click', showAddTransactionModal);
+  applyFiltersBtn?.addEventListener('click', applyFilters);
+  clearFiltersBtn?.addEventListener('click', clearFilters);
+
+  // Search on Enter key
+  searchInput?.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      applyFilters();
+    }
+  });
+
+  // Initialize page
+  loadAccounts();
+  loadCategories();
+  loadTransactions();
+</script>

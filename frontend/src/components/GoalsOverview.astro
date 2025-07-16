@@ -1,0 +1,136 @@
+---
+import GoalProgress from './GoalProgress.astro';
+
+export interface Props {
+  goals?: any[];
+  currency?: string;
+}
+
+const { goals = [], currency = '$' } = Astro.props;
+
+// Calculate overview stats
+const activeGoals = goals.filter(g => !g.is_completed);
+const completedGoals = goals.filter(g => g.is_completed);
+const totalTargetAmount = goals.reduce((sum, g) => sum + g.target_amount, 0);
+const totalCurrentAmount = goals.reduce((sum, g) => sum + g.current_amount, 0);
+const overallProgress = totalTargetAmount > 0 ? (totalCurrentAmount / totalTargetAmount) * 100 : 0;
+
+// Get top 3 active goals to display
+const topActiveGoals = activeGoals
+  .sort((a, b) => {
+    const aProgress = (a.current_amount / a.target_amount) * 100;
+    const bProgress = (b.current_amount / b.target_amount) * 100;
+    return bProgress - aProgress; // Sort by progress descending
+  })
+  .slice(0, 3);
+---
+
+<div class="bg-white rounded-lg shadow">
+  <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+    <h2 class="text-lg font-medium text-gray-900">Financial Goals</h2>
+    <a 
+      href="/goals" 
+      class="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+    >
+      View All →
+    </a>
+  </div>
+  
+  {goals.length > 0 ? (
+    <div class="p-6">
+      <!-- Overview Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">{goals.length}</div>
+          <div class="text-sm text-gray-600">Total Goals</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-green-600">{completedGoals.length}</div>
+          <div class="text-sm text-gray-600">Completed</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-blue-600">{activeGoals.length}</div>
+          <div class="text-sm text-gray-600">Active</div>
+        </div>
+        <div class="text-center">
+          <div class="text-2xl font-bold text-gray-900">{Math.round(overallProgress)}%</div>
+          <div class="text-sm text-gray-600">Overall Progress</div>
+        </div>
+      </div>
+      
+      <!-- Overall Progress Bar -->
+      <div class="mb-6">
+        <div class="flex justify-between text-sm text-gray-600 mb-2">
+          <span>Overall Goal Progress</span>
+          <span>{currency}{totalCurrentAmount.toLocaleString()} / {currency}{totalTargetAmount.toLocaleString()}</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+          <div 
+            class="bg-blue-500 h-3 rounded-full transition-all duration-500"
+            style={`width: ${Math.min(overallProgress, 100)}%`}
+          ></div>
+        </div>
+      </div>
+      
+      <!-- Top Active Goals -->
+      {topActiveGoals.length > 0 && (
+        <div>
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Top Active Goals</h3>
+          <div class="space-y-3">
+            {topActiveGoals.map((goal) => (
+              <GoalProgress goal={goal} currency={currency} compact={true} />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      <!-- Recently Completed Goals -->
+      {completedGoals.length > 0 && (
+        <div class="mt-6">
+          <h3 class="text-sm font-medium text-gray-900 mb-3">Recently Completed</h3>
+          <div class="space-y-2">
+            {completedGoals.slice(0, 2).map((goal) => (
+              <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <div>
+                  <p class="text-sm font-medium text-green-800">{goal.name}</p>
+                  <p class="text-xs text-green-600">{currency}{goal.target_amount.toLocaleString()} achieved</p>
+                </div>
+                <div class="flex-shrink-0">
+                  <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                  </svg>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  ) : (
+    <div class="p-12 text-center">
+      <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
+      </svg>
+      <h3 class="mt-2 text-sm font-medium text-gray-900">No goals yet</h3>
+      <p class="mt-1 text-sm text-gray-500">Start by setting your first financial goal.</p>
+      <div class="mt-6">
+        <a 
+          href="/goals" 
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+        >
+          Create Goal
+        </a>
+      </div>
+    </div>
+  )}
+</div>
+
+<style>
+  .goal-stat {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .goal-stat:hover {
+    transform: scale(1.02);
+  }
+</style>

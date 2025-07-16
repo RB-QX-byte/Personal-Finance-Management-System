@@ -1,0 +1,284 @@
+---
+export interface Props {
+  accountId?: string;
+  onSuccess?: (transaction: any) => void;
+  onCancel?: () => void;
+}
+
+const { accountId, onSuccess, onCancel } = Astro.props;
+---
+
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="add-transaction-modal">
+  <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Add New Transaction</h3>
+        <button type="button" class="text-gray-400 hover:text-gray-600" id="close-modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="add-transaction-form" class="space-y-4">
+        <div>
+          <label for="transaction-account" class="block text-sm font-medium text-gray-700 mb-1">
+            Account *
+          </label>
+          <select
+            id="transaction-account"
+            name="account_id"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">Select account</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-type" class="block text-sm font-medium text-gray-700 mb-1">
+            Transaction Type *
+          </label>
+          <select
+            id="transaction-type"
+            name="transaction_type"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">Select type</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-amount" class="block text-sm font-medium text-gray-700 mb-1">
+            Amount *
+          </label>
+          <input
+            type="number"
+            id="transaction-amount"
+            name="amount"
+            step="0.01"
+            min="0.01"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="0.00"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-category" class="block text-sm font-medium text-gray-700 mb-1">
+            Category
+          </label>
+          <select
+            id="transaction-category"
+            name="category_id"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">Select category</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-date" class="block text-sm font-medium text-gray-700 mb-1">
+            Date *
+          </label>
+          <input
+            type="date"
+            id="transaction-date"
+            name="transaction_date"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-description" class="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
+          <input
+            type="text"
+            id="transaction-description"
+            name="description"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="What was this transaction for?"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-notes" class="block text-sm font-medium text-gray-700 mb-1">
+            Notes (Optional)
+          </label>
+          <textarea
+            id="transaction-notes"
+            name="notes"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="Additional notes..."
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            id="cancel-btn"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+          >
+            Add Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ accountId }}>
+  const modal = document.getElementById('add-transaction-modal');
+  const form = document.getElementById('add-transaction-form') as HTMLFormElement;
+  const closeBtn = document.getElementById('close-modal');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const accountSelect = document.getElementById('transaction-account') as HTMLSelectElement;
+  const categorySelect = document.getElementById('transaction-category') as HTMLSelectElement;
+  const dateInput = document.getElementById('transaction-date') as HTMLInputElement;
+
+  // Set default date to today
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.value = today;
+
+  function closeModal() {
+    modal?.remove();
+  }
+
+  function showError(message: string) {
+    // Remove existing error message
+    const existingError = document.querySelector('.error-message');
+    if (existingError) {
+      existingError.remove();
+    }
+
+    // Add new error message
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+    errorDiv.textContent = message;
+    form.insertBefore(errorDiv, form.firstChild);
+  }
+
+  function showSuccess(message: string) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+    successDiv.textContent = message;
+    form.insertBefore(successDiv, form.firstChild);
+  }
+
+  async function loadAccounts() {
+    try {
+      const response = await fetch('/api/accounts');
+      if (response.ok) {
+        const accounts = await response.json();
+        
+        // Clear existing options
+        accountSelect.innerHTML = '<option value="">Select account</option>';
+        
+        // Add account options
+        accounts.forEach((account: any) => {
+          const option = document.createElement('option');
+          option.value = account.id;
+          option.textContent = `${account.name} (${account.account_type.replace('_', ' ')})`;
+          if (account.id === accountId) {
+            option.selected = true;
+          }
+          accountSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const categories = await response.json();
+        
+        // Clear existing options
+        categorySelect.innerHTML = '<option value="">Select category</option>';
+        
+        // Add category options
+        categories.forEach((category: any) => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          categorySelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+
+  // Close modal when clicking outside
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const data = {
+      account_id: formData.get('account_id') as string,
+      transaction_type: formData.get('transaction_type') as string,
+      amount: formData.get('amount') as string,
+      category_id: formData.get('category_id') as string,
+      transaction_date: formData.get('transaction_date') as string,
+      description: formData.get('description') as string,
+      notes: formData.get('notes') as string,
+    };
+
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const transaction = await response.json();
+        showSuccess('Transaction added successfully!');
+        
+        // Dispatch custom event to notify parent
+        window.dispatchEvent(new CustomEvent('transactionAdded', { detail: transaction }));
+        
+        // Close modal after a short delay
+        setTimeout(() => {
+          closeModal();
+        }, 1000);
+      } else {
+        const errorText = await response.text();
+        showError(errorText || 'Failed to add transaction');
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      showError('An unexpected error occurred. Please try again.');
+    }
+  });
+
+  // Load accounts and categories when modal opens
+  loadAccounts();
+  loadCategories();
+</script>
