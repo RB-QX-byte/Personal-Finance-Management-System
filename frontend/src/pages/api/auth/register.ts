@@ -62,8 +62,27 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // If session exists (email confirmation disabled), set cookies
+    // If session exists (email confirmation disabled), set cookies and create profile
     if (data.session) {
+      // Create user profile in the database
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: fullName || '',
+            currency_preference: currency || 'USD',
+            updated_at: new Date().toISOString()
+          });
+        
+        if (profileError && profileError.code !== '23505') { // Ignore duplicate key error
+          console.error('Profile creation error during registration:', profileError);
+        }
+      } catch (profileError) {
+        console.error('Profile creation failed during registration:', profileError);
+        // Don't fail registration if profile creation fails
+      }
+
       const response = new Response(
         JSON.stringify({ 
           success: true,

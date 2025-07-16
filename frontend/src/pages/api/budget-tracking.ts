@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
+import { requireAuth } from '../../lib/auth';
 
 interface BudgetTracking {
   budget_id: string;
@@ -22,16 +23,9 @@ interface BudgetTracking {
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const url = new URL(request.url);
     const budgetId = url.searchParams.get('budget_id');
@@ -52,7 +46,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         end_date,
         categories(id, name, color, icon)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .eq('is_active', true);
 
     // Apply filters
@@ -102,7 +96,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         const { data: transactions, error: transactionError } = await supabase
           .from('transactions')
           .select('amount, transaction_type')
-          .eq('user_id', user.id)
+          .eq('user_id', session.user.id)
           .eq('category_id', budget.categories?.id)
           .gte('transaction_date', budgetStartDate)
           .lte('transaction_date', budgetEndDate)
@@ -161,7 +155,22 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     });
   } catch (error) {
     console.error('Error in GET /api/budget-tracking:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 };
 
@@ -169,16 +178,9 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const body = await request.json();
     const { budget_id } = body;
@@ -200,7 +202,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
         categories(id, name, color, icon)
       `)
       .eq('id', budget_id)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .eq('is_active', true)
       .single();
 
@@ -215,7 +217,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const { data: transactions, error: transactionError } = await supabase
       .from('transactions')
       .select('amount, transaction_type')
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .eq('category_id', budget.categories?.id)
       .gte('transaction_date', budgetStartDate)
       .lte('transaction_date', budgetEndDate)
@@ -272,6 +274,21 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     });
   } catch (error) {
     console.error('Error in POST /api/budget-tracking:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 };

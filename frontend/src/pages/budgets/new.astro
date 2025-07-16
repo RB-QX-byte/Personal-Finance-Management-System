@@ -1,0 +1,99 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import BudgetForm from '../../components/BudgetForm.astro';
+import { supabase } from '../../lib/supabase';
+
+// Check authentication
+const cookies = Astro.cookies;
+const accessToken = cookies.get('sb-access-token')?.value;
+
+if (!accessToken) {
+  return Astro.redirect('/login');
+}
+
+// Get user
+const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
+
+if (userError || !user) {
+  return Astro.redirect('/login');
+}
+
+// Fetch categories for the budget form
+const { data: categories, error: categoriesError } = await supabase
+  .from('categories')
+  .select('id, name, color, icon')
+  .eq('user_id', user.id)
+  .eq('is_active', true)
+  .order('name', { ascending: true });
+
+if (categoriesError) {
+  console.error('Error fetching categories:', categoriesError);
+}
+
+const pageTitle = 'Create New Budget';
+---
+
+<Layout title={pageTitle}>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Page Header -->
+      <div class="mb-8">
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">{pageTitle}</h1>
+            <p class="mt-2 text-gray-600">Set up a new budget to track your spending</p>
+          </div>
+          <a
+            href="/budgets"
+            class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Back to Budgets
+          </a>
+        </div>
+      </div>
+
+      <!-- Budget Form -->
+      <div class="max-w-2xl mx-auto">
+        <BudgetForm categories={categories || []} />
+      </div>
+
+      <!-- Tips Section -->
+      <div class="max-w-2xl mx-auto mt-8">
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <h3 class="text-lg font-medium text-blue-900 mb-4">💡 Budget Tips</h3>
+          <ul class="space-y-2 text-sm text-blue-800">
+            <li class="flex items-start">
+              <span class="flex-shrink-0 w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-3"></span>
+              <span>Start with categories where you spend the most money</span>
+            </li>
+            <li class="flex items-start">
+              <span class="flex-shrink-0 w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-3"></span>
+              <span>Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings</span>
+            </li>
+            <li class="flex items-start">
+              <span class="flex-shrink-0 w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-3"></span>
+              <span>Review and adjust your budgets monthly</span>
+            </li>
+            <li class="flex items-start">
+              <span class="flex-shrink-0 w-1.5 h-1.5 bg-blue-600 rounded-full mt-2 mr-3"></span>
+              <span>Set realistic amounts based on your spending history</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  // Function to close the budget form (referenced in BudgetForm component)
+  function closeBudgetForm() {
+    window.location.href = '/budgets';
+  }
+  
+  // Make function globally available
+  window.closeBudgetForm = closeBudgetForm;
+</script>

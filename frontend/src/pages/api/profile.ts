@@ -18,6 +18,47 @@ export const GET: APIRoute = async ({ cookies }) => {
 
     if (error) {
       console.error('Profile fetch error:', error);
+      
+      // If profile doesn't exist, create one
+      if (error.code === 'PGRST116') {
+        console.log('Profile not found, creating new profile for user:', session.user.id);
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: session.user.id,
+            full_name: session.user.user_metadata?.full_name || '',
+            currency_preference: session.user.user_metadata?.currency_preference || 'USD',
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+        
+        if (createError) {
+          console.error('Profile creation error:', createError);
+          return new Response(
+            JSON.stringify({ error: 'Failed to create profile' }),
+            { 
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            profile: {
+              ...newProfile,
+              email: session.user.email,
+            }
+          }),
+          { 
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Failed to fetch profile' }),
         { 

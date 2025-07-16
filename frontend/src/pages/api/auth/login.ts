@@ -56,6 +56,33 @@ export const POST: APIRoute = async ({ request }) => {
       }
     );
 
+    // Ensure user profile exists
+    try {
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
+      
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            full_name: data.user.user_metadata?.full_name || '',
+            currency_preference: data.user.user_metadata?.currency_preference || 'USD',
+            updated_at: new Date().toISOString()
+          });
+        
+        if (profileError && profileError.code !== '23505') { // Ignore duplicate key error
+          console.error('Profile creation error during login:', profileError);
+        }
+      }
+    } catch (profileError) {
+      console.error('Profile check/creation failed during login:', profileError);
+      // Don't fail login if profile creation fails
+    }
+
     // Set HTTP-only cookies (secure flag only in production)
     const isProduction = import.meta.env.PROD;
     const secureFlag = isProduction ? '; Secure' : '';

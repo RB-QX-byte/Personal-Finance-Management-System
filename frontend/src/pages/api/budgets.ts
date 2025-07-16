@@ -1,19 +1,13 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
+import { requireAuth } from '../../lib/auth';
 
 export const GET: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const url = new URL(request.url);
     const categoryId = url.searchParams.get('category_id');
@@ -28,7 +22,7 @@ export const GET: APIRoute = async ({ request, cookies }) => {
         *,
         categories(name, color, icon)
       `)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .order('start_date', { ascending: false })
       .order('created_at', { ascending: false });
 
@@ -57,7 +51,13 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 
     if (error) {
       console.error('Error fetching budgets:', error);
-      return new Response('Internal Server Error', { status: 500 });
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch budgets' }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     return new Response(JSON.stringify(budgets), {
@@ -68,23 +68,31 @@ export const GET: APIRoute = async ({ request, cookies }) => {
     });
   } catch (error) {
     console.error('Error in GET /api/budgets:', error);
-    return new Response('Internal Server Error', { status: 500 });
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
   }
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const body = await request.json();
     const { 
@@ -99,13 +107,25 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Validate required fields
     if (!category_id || !name || !amount || !period || !start_date) {
-      return new Response('Category ID, name, amount, period, and start date are required', { status: 400 });
+      return new Response(
+        JSON.stringify({ error: 'Category ID, name, amount, period, and start date are required' }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Validate period
     const validPeriods = ['weekly', 'monthly', 'quarterly', 'yearly'];
     if (!validPeriods.includes(period)) {
-      return new Response('Invalid period', { status: 400 });
+      return new Response(
+        JSON.stringify({ error: 'Invalid period. Must be one of: weekly, monthly, quarterly, yearly' }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Validate amount
@@ -123,7 +143,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .from('categories')
       .select('id')
       .eq('id', category_id)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .single();
 
     if (categoryError || !category) {
@@ -135,7 +155,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .from('budgets')
       .insert([
         {
-          user_id: user.id,
+          user_id: session.user.id,
           category_id,
           name,
           amount: parseFloat(amount),
@@ -174,16 +194,9 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 export const PUT: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const body = await request.json();
     const { 
@@ -236,7 +249,7 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
       .from('budgets')
       .update(updateData)
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .select(`
         *,
         categories(name, color, icon)
@@ -267,16 +280,9 @@ export const PUT: APIRoute = async ({ request, cookies }) => {
 export const DELETE: APIRoute = async ({ request, cookies }) => {
   try {
     const accessToken = cookies.get('sb-access-token')?.value;
-    
-    if (!accessToken) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const refreshToken = cookies.get('sb-refresh-token')?.value;
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    
-    if (userError || !user) {
-      return new Response('Unauthorized', { status: 401 });
-    }
+    const session = await requireAuth(accessToken, refreshToken);
 
     const url = new URL(request.url);
     const id = url.searchParams.get('id');
@@ -290,7 +296,7 @@ export const DELETE: APIRoute = async ({ request, cookies }) => {
       .from('budgets')
       .delete()
       .eq('id', id)
-      .eq('user_id', user.id)
+      .eq('user_id', session.user.id)
       .select()
       .single();
 
