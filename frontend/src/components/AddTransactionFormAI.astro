@@ -1,0 +1,448 @@
+---
+export interface Props {
+  accountId?: string;
+  onSuccess?: (transaction: any) => void;
+  onCancel?: () => void;
+}
+
+const { accountId, onSuccess, onCancel } = Astro.props;
+---
+
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="add-transaction-modal">
+  <div class="relative top-20 mx-auto p-5 border w-full max-w-md shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Add New Transaction</h3>
+        <button type="button" class="text-gray-400 hover:text-gray-600" id="close-modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <form id="add-transaction-form" class="space-y-4">
+        <div>
+          <label for="transaction-account" class="block text-sm font-medium text-gray-700 mb-1">
+            Account *
+          </label>
+          <select
+            id="transaction-account"
+            name="account_id"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">Select account</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-type" class="block text-sm font-medium text-gray-700 mb-1">
+            Transaction Type *
+          </label>
+          <select
+            id="transaction-type"
+            name="transaction_type"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">Select type</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transaction-amount" class="block text-sm font-medium text-gray-700 mb-1">
+            Amount *
+          </label>
+          <input
+            type="number"
+            id="transaction-amount"
+            name="amount"
+            step="0.01"
+            min="0.01"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="0.00"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-description" class="block text-sm font-medium text-gray-700 mb-1">
+            Description *
+          </label>
+          <input
+            type="text"
+            id="transaction-description"
+            name="description"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="What was this transaction for?"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-category" class="block text-sm font-medium text-gray-700 mb-1">
+            Category
+            <span class="text-xs text-gray-500 ml-1">(AI suggested)</span>
+          </label>
+          <div class="relative">
+            <select
+              id="transaction-category"
+              name="category_id"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">Select category</option>
+            </select>
+            <div id="ai-categorization-loader" class="absolute right-3 top-3 hidden">
+              <svg class="animate-spin h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+          
+          <!-- AI Suggestions -->
+          <div id="ai-suggestions" class="hidden mt-2 bg-blue-50 border border-blue-200 rounded-md p-3">
+            <div class="flex items-center mb-2">
+              <svg class="w-4 h-4 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+              </svg>
+              <span class="text-sm font-medium text-blue-800">AI Suggestions</span>
+            </div>
+            <div id="ai-suggestions-content" class="space-y-2"></div>
+          </div>
+        </div>
+
+        <div>
+          <label for="transaction-date" class="block text-sm font-medium text-gray-700 mb-1">
+            Date *
+          </label>
+          <input
+            type="date"
+            id="transaction-date"
+            name="transaction_date"
+            required
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+        </div>
+
+        <div>
+          <label for="transaction-notes" class="block text-sm font-medium text-gray-700 mb-1">
+            Notes (Optional)
+          </label>
+          <textarea
+            id="transaction-notes"
+            name="notes"
+            rows="3"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            placeholder="Additional notes..."
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            id="cancel-btn"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            id="submit-btn"
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors"
+          >
+            Add Transaction
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ accountId }}>
+  const modal = document.getElementById('add-transaction-modal');
+  const form = document.getElementById('add-transaction-form') as HTMLFormElement;
+  const closeBtn = document.getElementById('close-modal');
+  const cancelBtn = document.getElementById('cancel-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  const accountSelect = document.getElementById('transaction-account') as HTMLSelectElement;
+  const categorySelect = document.getElementById('transaction-category') as HTMLSelectElement;
+  const dateInput = document.getElementById('transaction-date') as HTMLInputElement;
+  const descriptionInput = document.getElementById('transaction-description') as HTMLInputElement;
+  const amountInput = document.getElementById('transaction-amount') as HTMLInputElement;
+  const aiLoader = document.getElementById('ai-categorization-loader');
+  const aiSuggestions = document.getElementById('ai-suggestions');
+  const aiSuggestionsContent = document.getElementById('ai-suggestions-content');
+
+  let aiCategorizationTimeout: NodeJS.Timeout;
+  let lastAIRequest: any = null;
+
+  // Set default date to today
+  const today = new Date().toISOString().split('T')[0];
+  dateInput.value = today;
+
+  function closeModal() {
+    modal?.remove();
+  }
+
+  function showError(message: string) {
+    const existingError = document.querySelector('.error-message');
+    if (existingError) {
+      existingError.remove();
+    }
+
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+    errorDiv.textContent = message;
+    form.insertBefore(errorDiv, form.firstChild);
+  }
+
+  function showSuccess(message: string) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'success-message bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+    successDiv.textContent = message;
+    form.insertBefore(successDiv, form.firstChild);
+  }
+
+  async function loadAccounts() {
+    try {
+      const response = await fetch('/api/accounts');
+      if (response.ok) {
+        const accounts = await response.json();
+        
+        accountSelect.innerHTML = '<option value="">Select account</option>';
+        
+        accounts.forEach((account: any) => {
+          const option = document.createElement('option');
+          option.value = account.id;
+          option.textContent = `${account.name} (${account.account_type.replace('_', ' ')})`;
+          if (account.id === accountId) {
+            option.selected = true;
+          }
+          accountSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const categories = await response.json();
+        
+        categorySelect.innerHTML = '<option value="">Select category</option>';
+        
+        categories.forEach((category: any) => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          categorySelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+
+  async function getAICategorization() {
+    const description = descriptionInput.value.trim();
+    const amount = parseFloat(amountInput.value);
+    
+    if (!description || !amount) {
+      aiSuggestions?.classList.add('hidden');
+      return;
+    }
+
+    // Show loading
+    aiLoader?.classList.remove('hidden');
+    aiSuggestions?.classList.add('hidden');
+
+    try {
+      const response = await fetch('/api/ai-categorize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          transaction: {
+            description,
+            amount,
+            date: dateInput.value,
+          },
+          userId: document.cookie.split('user_id=')[1]?.split(';')[0] || 'unknown'
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        displayAISuggestions(result);
+        lastAIRequest = result;
+      } else {
+        console.error('AI categorization failed:', await response.text());
+      }
+    } catch (error) {
+      console.error('Error getting AI categorization:', error);
+    } finally {
+      aiLoader?.classList.add('hidden');
+    }
+  }
+
+  function displayAISuggestions(result: any) {
+    if (!aiSuggestionsContent) return;
+
+    aiSuggestionsContent.innerHTML = '';
+
+    // Primary suggestion
+    const primarySuggestion = createSuggestionElement(result.prediction, true);
+    aiSuggestionsContent.appendChild(primarySuggestion);
+
+    // Alternative suggestions
+    if (result.alternatives && result.alternatives.length > 0) {
+      result.alternatives.forEach((alt: any) => {
+        const altSuggestion = createSuggestionElement(alt, false);
+        aiSuggestionsContent.appendChild(altSuggestion);
+      });
+    }
+
+    aiSuggestions?.classList.remove('hidden');
+  }
+
+  function createSuggestionElement(suggestion: any, isPrimary: boolean) {
+    const div = document.createElement('div');
+    div.className = `cursor-pointer p-2 rounded ${isPrimary ? 'bg-blue-100 border border-blue-300' : 'bg-gray-50 border border-gray-200'} hover:bg-blue-200 transition-colors`;
+    
+    const confidenceColor = suggestion.confidence >= 80 ? 'text-green-600' : 
+                           suggestion.confidence >= 60 ? 'text-yellow-600' : 'text-red-600';
+    
+    div.innerHTML = `
+      <div class="flex justify-between items-center">
+        <span class="font-medium ${isPrimary ? 'text-blue-800' : 'text-gray-700'}">${suggestion.categoryName}</span>
+        <span class="text-xs ${confidenceColor}">${suggestion.confidence}%</span>
+      </div>
+      <div class="text-xs text-gray-600 mt-1">${suggestion.reasoning}</div>
+    `;
+
+    div.addEventListener('click', () => {
+      categorySelect.value = suggestion.categoryId;
+      aiSuggestions?.classList.add('hidden');
+    });
+
+    return div;
+  }
+
+  // Auto-categorization with debouncing
+  function setupAutoCategorization() {
+    [descriptionInput, amountInput].forEach(input => {
+      input.addEventListener('input', () => {
+        clearTimeout(aiCategorizationTimeout);
+        aiCategorizationTimeout = setTimeout(getAICategorization, 1000);
+      });
+    });
+  }
+
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Disable submit button to prevent double submission
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Adding...';
+    }
+    
+    const formData = new FormData(form);
+    const data = {
+      account_id: formData.get('account_id') as string,
+      transaction_type: formData.get('transaction_type') as string,
+      amount: formData.get('amount') as string,
+      category_id: formData.get('category_id') as string,
+      transaction_date: formData.get('transaction_date') as string,
+      description: formData.get('description') as string,
+      notes: formData.get('notes') as string,
+    };
+
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        const transaction = await response.json();
+        
+        // Log AI categorization feedback if applicable
+        if (lastAIRequest && data.category_id) {
+          logAIFeedback(lastAIRequest, data.category_id);
+        }
+        
+        showSuccess('Transaction added successfully!');
+        
+        window.dispatchEvent(new CustomEvent('transactionAdded', { detail: transaction }));
+        
+        setTimeout(() => {
+          closeModal();
+        }, 1000);
+      } else {
+        const errorText = await response.text();
+        showError(errorText || 'Failed to add transaction');
+      }
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      showError('An unexpected error occurred. Please try again.');
+    } finally {
+      // Re-enable submit button
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Transaction';
+      }
+    }
+  });
+
+  async function logAIFeedback(aiResult: any, selectedCategoryId: string) {
+    try {
+      const wasCorrect = aiResult.prediction.categoryId === selectedCategoryId;
+      
+      // This would typically be sent to your AI feedback API
+      console.log('AI Categorization Feedback:', {
+        predicted: aiResult.prediction.categoryId,
+        actual: selectedCategoryId,
+        correct: wasCorrect,
+        confidence: aiResult.prediction.confidence
+      });
+    } catch (error) {
+      console.error('Error logging AI feedback:', error);
+    }
+  }
+
+  // Initialize
+  loadAccounts();
+  loadCategories();
+  setupAutoCategorization();
+</script>
+
+<style>
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>

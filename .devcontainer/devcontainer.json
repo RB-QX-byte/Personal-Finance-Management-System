@@ -1,0 +1,35 @@
+{
+  "name": "Personal Finance Management",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/go:1": {
+      "version": "1.24"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    }
+  },
+
+  "forwardPorts": [4321, 8080],
+  
+  "postCreateCommand": "cp env.example .env && echo 'Development environment ready! Update .env with your Supabase credentials.'",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "astro-build.astro-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-docker",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "go.useLanguageServer": true,
+        "go.gopath": "/go",
+        "go.goroot": "/usr/local/go"
+      }
+    }
+  }
+} 

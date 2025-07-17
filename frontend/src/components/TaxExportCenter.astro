@@ -1,0 +1,464 @@
+---
+export interface Props {
+  userId: string;
+}
+
+const { userId } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h3 class="text-lg font-semibold text-gray-900">Tax Export Center</h3>
+      <p class="text-sm text-gray-600 mt-1">Export your financial data for tax preparation</p>
+    </div>
+    <div class="flex items-center space-x-2">
+      <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+      </svg>
+      <span class="text-sm text-green-600 font-medium">Tax Software Compatible</span>
+    </div>
+  </div>
+
+  <!-- Export Form -->
+  <form id="tax-export-form" class="space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Tax Year Selection -->
+      <div>
+        <label for="tax-year" class="block text-sm font-medium text-gray-700 mb-2">
+          Tax Year *
+        </label>
+        <select 
+          id="tax-year" 
+          name="taxYear" 
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">Select tax year</option>
+          <!-- Years will be populated by JavaScript -->
+        </select>
+      </div>
+
+      <!-- Export Format -->
+      <div>
+        <label for="export-format" class="block text-sm font-medium text-gray-700 mb-2">
+          Export Format *
+        </label>
+        <select 
+          id="export-format" 
+          name="exportFormat" 
+          required
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          <option value="">Select format</option>
+          <!-- Formats will be populated by JavaScript -->
+        </select>
+      </div>
+    </div>
+
+    <!-- Date Range (Optional) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label for="start-date" class="block text-sm font-medium text-gray-700 mb-2">
+          Start Date (Optional)
+        </label>
+        <input 
+          type="date" 
+          id="start-date" 
+          name="startDate"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+      <div>
+        <label for="end-date" class="block text-sm font-medium text-gray-700 mb-2">
+          End Date (Optional)
+        </label>
+        <input 
+          type="date" 
+          id="end-date" 
+          name="endDate"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="space-y-4">
+      <h4 class="text-md font-medium text-gray-900">Export Options</h4>
+      
+      <div class="space-y-3">
+        <label class="flex items-center">
+          <input 
+            type="checkbox" 
+            id="include-deductibles" 
+            name="includeDeductibles"
+            class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+          />
+          <span class="ml-2 text-sm text-gray-700">Only include tax-deductible transactions</span>
+        </label>
+        
+        <label class="flex items-center">
+          <input 
+            type="checkbox" 
+            id="separate-business" 
+            name="separateBusinessPersonal"
+            class="rounded border-gray-300 text-primary-600 shadow-sm focus:border-primary-300 focus:ring focus:ring-primary-200 focus:ring-opacity-50"
+          />
+          <span class="ml-2 text-sm text-gray-700">Separate business and personal expenses</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Export Button -->
+    <div class="flex justify-end">
+      <button 
+        type="submit" 
+        id="export-btn"
+        class="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+      >
+        Export Tax Data
+      </button>
+    </div>
+  </form>
+
+  <!-- Format Information -->
+  <div id="format-info" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-md hidden">
+    <h5 class="font-medium text-blue-900 mb-2">Format Information</h5>
+    <p id="format-description" class="text-sm text-blue-800"></p>
+  </div>
+
+  <!-- Tax Software Compatibility -->
+  <div class="mt-8 border-t pt-6">
+    <h4 class="text-md font-medium text-gray-900 mb-4">Tax Software Compatibility</h4>
+    <div id="compatibility-info" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <!-- Compatibility cards will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Tax Summary -->
+  <div id="tax-summary" class="mt-8 border-t pt-6 hidden">
+    <h4 class="text-md font-medium text-gray-900 mb-4">Tax Summary</h4>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-green-50 p-4 rounded-md">
+        <div class="text-sm text-green-600 font-medium">Total Deductible Expenses</div>
+        <div id="total-deductible" class="text-2xl font-bold text-green-900">$0.00</div>
+      </div>
+      <div class="bg-blue-50 p-4 rounded-md">
+        <div class="text-sm text-blue-600 font-medium">Business Expenses</div>
+        <div id="total-business" class="text-2xl font-bold text-blue-900">$0.00</div>
+      </div>
+      <div class="bg-gray-50 p-4 rounded-md">
+        <div class="text-sm text-gray-600 font-medium">Total Transactions</div>
+        <div id="total-transactions" class="text-2xl font-bold text-gray-900">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tax Categories -->
+  <div id="tax-categories" class="mt-8 border-t pt-6 hidden">
+    <h4 class="text-md font-medium text-gray-900 mb-4">Tax-Deductible Categories</h4>
+    <div id="categories-list" class="space-y-2">
+      <!-- Categories will be populated by JavaScript -->
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ userId }}>
+  let exportFormats = [];
+  let taxSoftwareCompatibility = [];
+  let taxSummary = {};
+
+  // DOM elements
+  const form = document.getElementById('tax-export-form');
+  const taxYearSelect = document.getElementById('tax-year');
+  const exportFormatSelect = document.getElementById('export-format');
+  const startDateInput = document.getElementById('start-date');
+  const endDateInput = document.getElementById('end-date');
+  const exportBtn = document.getElementById('export-btn');
+  const formatInfo = document.getElementById('format-info');
+  const formatDescription = document.getElementById('format-description');
+  const compatibilityInfo = document.getElementById('compatibility-info');
+  const taxSummaryDiv = document.getElementById('tax-summary');
+  const taxCategoriesDiv = document.getElementById('tax-categories');
+
+  // Initialize
+  init();
+
+  async function init() {
+    await loadExportFormats();
+    await loadTaxSoftwareCompatibility();
+    await loadTaxCategories();
+    populateTaxYears();
+    setupEventListeners();
+  }
+
+  function populateTaxYears() {
+    const currentYear = new Date().getFullYear();
+    taxYearSelect.innerHTML = '<option value="">Select tax year</option>';
+    
+    for (let year = currentYear; year >= currentYear - 7; year--) {
+      const option = document.createElement('option');
+      option.value = year;
+      option.textContent = year;
+      if (year === currentYear - 1) {
+        option.selected = true;
+      }
+      taxYearSelect.appendChild(option);
+    }
+  }
+
+  async function loadExportFormats() {
+    try {
+      const response = await fetch(`/api/tax-export?userId=${userId}&action=formats`);
+      if (response.ok) {
+        const data = await response.json();
+        exportFormats = data.formats;
+        populateExportFormats();
+      }
+    } catch (error) {
+      console.error('Error loading export formats:', error);
+    }
+  }
+
+  function populateExportFormats() {
+    exportFormatSelect.innerHTML = '<option value="">Select format</option>';
+    
+    exportFormats.forEach(format => {
+      const option = document.createElement('option');
+      option.value = format.value;
+      option.textContent = format.label;
+      option.dataset.description = format.description;
+      exportFormatSelect.appendChild(option);
+    });
+  }
+
+  async function loadTaxSoftwareCompatibility() {
+    try {
+      const response = await fetch(`/api/tax-export?userId=${userId}&action=compatibility`);
+      if (response.ok) {
+        const data = await response.json();
+        taxSoftwareCompatibility = data.compatibility;
+        displayCompatibilityInfo();
+      }
+    } catch (error) {
+      console.error('Error loading compatibility info:', error);
+    }
+  }
+
+  function displayCompatibilityInfo() {
+    compatibilityInfo.innerHTML = taxSoftwareCompatibility.map(item => `
+      <div class="border rounded-md p-3 bg-gray-50">
+        <div class="font-medium text-gray-900">${item.software}</div>
+        <div class="text-sm text-gray-600 mt-1">
+          Formats: ${item.formats.join(', ')}
+        </div>
+        <div class="text-xs text-gray-500 mt-2">${item.notes}</div>
+      </div>
+    `).join('');
+  }
+
+  async function loadTaxCategories() {
+    try {
+      const response = await fetch(`/api/tax-export?userId=${userId}&action=tax-categories`);
+      if (response.ok) {
+        const data = await response.json();
+        displayTaxCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('Error loading tax categories:', error);
+    }
+  }
+
+  function displayTaxCategories(categories) {
+    const categoriesList = document.getElementById('categories-list');
+    if (!categoriesList) return;
+
+    categoriesList.innerHTML = categories.map(category => `
+      <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+        <div class="flex items-center">
+          <div class="w-3 h-3 rounded-full mr-2" style="background-color: ${category.color || '#6366f1'}"></div>
+          <span class="font-medium">${category.name}</span>
+        </div>
+        <div class="flex items-center space-x-2">
+          ${category.tax_deductible ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Tax Deductible</span>' : ''}
+          ${category.business_expense ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">Business</span>' : ''}
+        </div>
+      </div>
+    `).join('');
+
+    if (categories.length > 0) {
+      taxCategoriesDiv.classList.remove('hidden');
+    }
+  }
+
+  function setupEventListeners() {
+    form?.addEventListener('submit', handleExport);
+    exportFormatSelect?.addEventListener('change', handleFormatChange);
+    taxYearSelect?.addEventListener('change', handleTaxYearChange);
+  }
+
+  function handleFormatChange() {
+    const selectedFormat = exportFormatSelect.value;
+    const selectedOption = exportFormatSelect.options[exportFormatSelect.selectedIndex];
+    
+    if (selectedFormat && selectedOption.dataset.description) {
+      formatDescription.textContent = selectedOption.dataset.description;
+      formatInfo.classList.remove('hidden');
+    } else {
+      formatInfo.classList.add('hidden');
+    }
+  }
+
+  async function handleTaxYearChange() {
+    const selectedYear = taxYearSelect.value;
+    if (selectedYear) {
+      // Set default date range
+      startDateInput.value = `${selectedYear}-01-01`;
+      endDateInput.value = `${selectedYear}-12-31`;
+      
+      // Load tax summary for the year
+      await loadTaxSummary(selectedYear);
+    }
+  }
+
+  async function loadTaxSummary(taxYear) {
+    try {
+      const response = await fetch(`/api/tax-export?userId=${userId}&action=tax-summary&taxYear=${taxYear}`);
+      if (response.ok) {
+        const data = await response.json();
+        displayTaxSummary(data);
+      }
+    } catch (error) {
+      console.error('Error loading tax summary:', error);
+    }
+  }
+
+  function displayTaxSummary(summary) {
+    const totalDeductibleEl = document.getElementById('total-deductible');
+    const totalBusinessEl = document.getElementById('total-business');
+    const totalTransactionsEl = document.getElementById('total-transactions');
+
+    if (totalDeductibleEl) {
+      totalDeductibleEl.textContent = `$${summary.totalDeductible.toFixed(2)}`;
+    }
+    if (totalBusinessEl) {
+      totalBusinessEl.textContent = `$${summary.totalBusiness.toFixed(2)}`;
+    }
+    if (totalTransactionsEl) {
+      totalTransactionsEl.textContent = summary.deductibleExpenses.length + summary.businessExpenses.length;
+    }
+
+    taxSummaryDiv.classList.remove('hidden');
+  }
+
+  async function handleExport(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const exportData = {
+      userId,
+      taxYear: parseInt(formData.get('taxYear')),
+      exportFormat: formData.get('exportFormat'),
+      includeDeductibles: formData.get('includeDeductibles') === 'on',
+      separateBusinessPersonal: formData.get('separateBusinessPersonal') === 'on',
+      dateRange: {
+        start: formData.get('startDate') || `${formData.get('taxYear')}-01-01`,
+        end: formData.get('endDate') || `${formData.get('taxYear')}-12-31`
+      }
+    };
+
+    // Validate form
+    if (!exportData.taxYear || !exportData.exportFormat) {
+      showError('Please select both tax year and export format');
+      return;
+    }
+
+    // Disable button and show loading
+    exportBtn.disabled = true;
+    exportBtn.textContent = 'Exporting...';
+
+    try {
+      const response = await fetch('/api/tax-export', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(exportData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        // Create download link
+        const blob = new Blob([result.export.content], { type: result.export.mimeType });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = result.export.fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        showSuccess(`Export completed successfully! ${result.summary.totalTransactions} transactions exported.`);
+      } else {
+        const error = await response.json();
+        showError(error.error || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      showError('An unexpected error occurred during export');
+    } finally {
+      exportBtn.disabled = false;
+      exportBtn.textContent = 'Export Tax Data';
+    }
+  }
+
+  function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+    errorDiv.textContent = message;
+    form.insertBefore(errorDiv, form.firstChild);
+    
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
+  }
+
+  function showSuccess(message) {
+    const successDiv = document.createElement('div');
+    successDiv.className = 'bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded mb-4';
+    successDiv.textContent = message;
+    form.insertBefore(successDiv, form.firstChild);
+    
+    setTimeout(() => {
+      successDiv.remove();
+    }, 5000);
+  }
+</script>
+
+<style>
+  .grid {
+    display: grid;
+  }
+  
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  @media (min-width: 768px) {
+    .md\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    
+    .md\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

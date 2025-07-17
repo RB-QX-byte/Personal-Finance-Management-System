@@ -1,0 +1,226 @@
+---
+import InteractiveChart from './InteractiveChart.astro';
+
+export interface Props {
+  userId: string;
+}
+
+const { userId } = Astro.props;
+
+// Fetch dashboard data
+async function fetchDashboardData() {
+  try {
+    const response = await fetch(`${Astro.url.origin}/api/dashboard-data?userId=${userId}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard data');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    return null;
+  }
+}
+
+const dashboardData = await fetchDashboardData();
+
+// Spending trends chart data
+const spendingTrendsData = {
+  labels: dashboardData?.spendingTrends?.labels || [],
+  datasets: [
+    {
+      label: 'Monthly Spending',
+      data: dashboardData?.spendingTrends?.data || [],
+      borderColor: 'rgb(59, 130, 246)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 6,
+      pointHoverRadius: 8,
+      pointBackgroundColor: 'rgb(59, 130, 246)',
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+    }
+  ]
+};
+
+// Category spending pie chart data
+const categorySpendingData = {
+  labels: dashboardData?.categorySpending?.labels || [],
+  datasets: [
+    {
+      data: dashboardData?.categorySpending?.data || [],
+      backgroundColor: [
+        '#ef4444', '#f59e0b', '#10b981', '#3b82f6',
+        '#8b5cf6', '#f97316', '#06b6d4', '#84cc16',
+        '#ec4899', '#6b7280', '#14b8a6', '#f43f5e'
+      ],
+      borderColor: 'white',
+      borderWidth: 2,
+      hoverBorderWidth: 3,
+    }
+  ]
+};
+
+// Budget vs actual chart data
+const budgetVsActualData = {
+  labels: dashboardData?.budgetVsActual?.labels || [],
+  datasets: [
+    {
+      label: 'Budget',
+      data: dashboardData?.budgetVsActual?.budgetData || [],
+      backgroundColor: 'rgba(34, 197, 94, 0.6)',
+      borderColor: 'rgb(34, 197, 94)',
+      borderWidth: 1,
+    },
+    {
+      label: 'Actual Spending',
+      data: dashboardData?.budgetVsActual?.actualData || [],
+      backgroundColor: 'rgba(239, 68, 68, 0.6)',
+      borderColor: 'rgb(239, 68, 68)',
+      borderWidth: 1,
+    }
+  ]
+};
+
+// Income vs expenses chart data
+const incomeVsExpensesData = {
+  labels: dashboardData?.incomeVsExpenses?.labels || [],
+  datasets: [
+    {
+      label: 'Income',
+      data: dashboardData?.incomeVsExpenses?.incomeData || [],
+      backgroundColor: 'rgba(34, 197, 94, 0.8)',
+      borderColor: 'rgb(34, 197, 94)',
+      borderWidth: 1,
+    },
+    {
+      label: 'Expenses',
+      data: dashboardData?.incomeVsExpenses?.expenseData || [],
+      backgroundColor: 'rgba(239, 68, 68, 0.8)',
+      borderColor: 'rgb(239, 68, 68)',
+      borderWidth: 1,
+    }
+  ]
+};
+
+// Net worth progression chart data
+const netWorthData = {
+  labels: dashboardData?.netWorth?.labels || [],
+  datasets: [
+    {
+      label: 'Net Worth',
+      data: dashboardData?.netWorth?.data || [],
+      borderColor: 'rgb(59, 130, 246)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+      fill: true,
+      tension: 0.4,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      pointBackgroundColor: 'rgb(59, 130, 246)',
+      pointBorderColor: 'white',
+      pointBorderWidth: 2,
+    }
+  ]
+};
+
+const spendingTrendsOptions = {
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
+  scales: {
+    x: {
+      type: 'time',
+      time: {
+        unit: 'month',
+        displayFormats: {
+          month: 'MMM yyyy'
+        }
+      }
+    }
+  }
+};
+
+const budgetOptions = {
+  plugins: {
+    legend: {
+      position: 'top',
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true
+    }
+  }
+};
+---
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+  <!-- Spending Trends Chart -->
+  <div class="lg:col-span-2">
+    <InteractiveChart 
+      chartId="spendingTrends"
+      chartType="line"
+      title="Monthly Spending Trends"
+      data={spendingTrendsData}
+      options={spendingTrendsOptions}
+      height={320}
+    />
+  </div>
+  
+  <!-- Category Spending Pie Chart -->
+  <InteractiveChart 
+    chartId="categorySpending"
+    chartType="doughnut"
+    title="Spending by Category"
+    data={categorySpendingData}
+    height={350}
+  />
+  
+  <!-- Budget vs Actual Chart -->
+  <InteractiveChart 
+    chartId="budgetVsActual"
+    chartType="bar"
+    title="Budget vs Actual Spending"
+    data={budgetVsActualData}
+    options={budgetOptions}
+    height={350}
+  />
+  
+  <!-- Income vs Expenses Chart -->
+  <InteractiveChart 
+    chartId="incomeVsExpenses"
+    chartType="bar"
+    title="Income vs Expenses"
+    data={incomeVsExpensesData}
+    options={budgetOptions}
+    height={300}
+  />
+  
+  <!-- Net Worth Progression Chart -->
+  <InteractiveChart 
+    chartId="netWorth"
+    chartType="line"
+    title="Net Worth Progression"
+    data={netWorthData}
+    options={spendingTrendsOptions}
+    height={300}
+  />
+</div>
+
+<style>
+  /* Custom styles for chart containers */
+  .chart-container {
+    position: relative;
+    height: 300px;
+    margin-bottom: 20px;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .chart-container {
+      height: 250px;
+    }
+  }
+</style>

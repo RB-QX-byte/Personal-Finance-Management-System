@@ -1,0 +1,365 @@
+---
+import { CurrencyService } from '../lib/currencyService';
+
+export interface Props {
+  userId: string;
+  baseCurrency: string;
+}
+
+const { userId, baseCurrency } = Astro.props;
+
+// Fetch user's profile currency preference
+let userCurrency = baseCurrency;
+try {
+  const response = await fetch(`${Astro.url.origin}/api/profile`);
+  if (response.ok) {
+    const profile = await response.json();
+    userCurrency = profile.currency_preference || baseCurrency;
+  }
+} catch (error) {
+  console.error('Error fetching user profile:', error);
+}
+
+const currencyService = CurrencyService.getInstance();
+const supportedCurrencies = currencyService.getSupportedCurrencies();
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="text-lg font-semibold text-gray-900">Multi-Currency Dashboard</h3>
+    <div class="flex items-center space-x-3">
+      <select 
+        id="base-currency-select"
+        class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+      >
+        {supportedCurrencies.map(currency => (
+          <option value={currency} selected={currency === userCurrency}>
+            {currency} - {currencyService.getCurrencyName(currency)}
+          </option>
+        ))}
+      </select>
+      <button 
+        id="refresh-rates"
+        class="px-3 py-1 bg-primary-600 text-white rounded-md text-sm hover:bg-primary-700 transition-colors"
+      >
+        Refresh Rates
+      </button>
+    </div>
+  </div>
+
+  <!-- Currency Rates Display -->
+  <div id="currency-rates" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <!-- Rates will be populated by JavaScript -->
+  </div>
+
+  <!-- Net Worth in Multiple Currencies -->
+  <div class="border-t pt-4">
+    <h4 class="text-md font-medium text-gray-900 mb-3">Net Worth in Different Currencies</h4>
+    <div id="net-worth-currencies" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Net worth will be populated by JavaScript -->
+    </div>
+  </div>
+
+  <!-- Quick Currency Converter -->
+  <div class="border-t pt-4 mt-4">
+    <h4 class="text-md font-medium text-gray-900 mb-3">Quick Currency Converter</h4>
+    <div class="flex items-center space-x-4">
+      <div class="flex-1">
+        <input 
+          type="number" 
+          id="convert-amount"
+          placeholder="Amount"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+      <div class="flex-1">
+        <select 
+          id="convert-from"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          {supportedCurrencies.map(currency => (
+            <option value={currency} selected={currency === userCurrency}>
+              {currency}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div class="text-gray-500">to</div>
+      <div class="flex-1">
+        <select 
+          id="convert-to"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          {supportedCurrencies.map(currency => (
+            <option value={currency} selected={currency === 'USD'}>
+              {currency}
+            </option>
+          ))}
+        </select>
+      </div>
+      <button 
+        id="convert-btn"
+        class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors"
+      >
+        Convert
+      </button>
+    </div>
+    <div id="conversion-result" class="mt-3 text-sm text-gray-600 hidden"></div>
+  </div>
+</div>
+
+<script define:vars={{ userId, userCurrency }}>
+  let currentBaseCurrency = userCurrency;
+  let exchangeRates = {};
+  let userNetWorth = 0;
+
+  // DOM elements
+  const baseCurrencySelect = document.getElementById('base-currency-select');
+  const refreshRatesBtn = document.getElementById('refresh-rates');
+  const currencyRatesContainer = document.getElementById('currency-rates');
+  const netWorthContainer = document.getElementById('net-worth-currencies');
+  const convertAmountInput = document.getElementById('convert-amount');
+  const convertFromSelect = document.getElementById('convert-from');
+  const convertToSelect = document.getElementById('convert-to');
+  const convertBtn = document.getElementById('convert-btn');
+  const conversionResult = document.getElementById('conversion-result');
+
+  // Initialize
+  init();
+
+  async function init() {
+    await fetchUserNetWorth();
+    await loadExchangeRates();
+    setupEventListeners();
+  }
+
+  function setupEventListeners() {
+    baseCurrencySelect?.addEventListener('change', handleBaseCurrencyChange);
+    refreshRatesBtn?.addEventListener('click', refreshExchangeRates);
+    convertBtn?.addEventListener('click', performConversion);
+    
+    // Auto-convert on input change
+    convertAmountInput?.addEventListener('input', performConversion);
+    convertFromSelect?.addEventListener('change', performConversion);
+    convertToSelect?.addEventListener('change', performConversion);
+  }
+
+  async function fetchUserNetWorth() {
+    try {
+      const response = await fetch(`/api/user-net-worth?userId=${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        userNetWorth = data.netWorth || 0;
+      }
+    } catch (error) {
+      console.error('Error fetching user net worth:', error);
+    }
+  }
+
+  async function loadExchangeRates() {
+    try {
+      const response = await fetch(`/api/currency/rates?base=${currentBaseCurrency}`);
+      if (response.ok) {
+        const data = await response.json();
+        exchangeRates = data.rates;
+        displayCurrencyRates();
+        displayNetWorthInCurrencies();
+      }
+    } catch (error) {
+      console.error('Error loading exchange rates:', error);
+      showError('Failed to load exchange rates');
+    }
+  }
+
+  function displayCurrencyRates() {
+    if (!currencyRatesContainer) return;
+
+    const majorCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD'];
+    const ratesToShow = majorCurrencies.filter(currency => 
+      currency !== currentBaseCurrency && exchangeRates[currency]
+    );
+
+    currencyRatesContainer.innerHTML = ratesToShow.map(currency => {
+      const rate = exchangeRates[currency];
+      const changeClass = rate.rate > 1 ? 'text-green-600' : 'text-red-600';
+      
+      return `
+        <div class="bg-gray-50 p-3 rounded-md">
+          <div class="flex justify-between items-center">
+            <div class="font-medium">${currentBaseCurrency}/${currency}</div>
+            <div class="text-sm text-gray-500">${rate.provider}</div>
+          </div>
+          <div class="text-lg font-semibold ${changeClass}">
+            ${rate.rate.toFixed(4)}
+          </div>
+          <div class="text-xs text-gray-500">
+            Updated: ${new Date(rate.timestamp).toLocaleTimeString()}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function displayNetWorthInCurrencies() {
+    if (!netWorthContainer) return;
+
+    const majorCurrencies = ['USD', 'EUR', 'GBP', 'JPY'];
+    const netWorthInCurrencies = majorCurrencies.map(currency => {
+      let convertedAmount = userNetWorth;
+      
+      if (currency !== currentBaseCurrency && exchangeRates[currency]) {
+        convertedAmount = userNetWorth * exchangeRates[currency].rate;
+      }
+
+      return {
+        currency,
+        amount: convertedAmount,
+        symbol: getCurrencySymbol(currency)
+      };
+    });
+
+    netWorthContainer.innerHTML = netWorthInCurrencies.map(item => `
+      <div class="bg-gray-50 p-3 rounded-md text-center">
+        <div class="text-sm text-gray-600 mb-1">${item.currency}</div>
+        <div class="text-lg font-semibold">
+          ${formatCurrency(item.amount, item.currency)}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function handleBaseCurrencyChange() {
+    const newBaseCurrency = baseCurrencySelect?.value;
+    if (newBaseCurrency && newBaseCurrency !== currentBaseCurrency) {
+      currentBaseCurrency = newBaseCurrency;
+      await loadExchangeRates();
+      
+      // Update user preference
+      await updateUserCurrencyPreference(newBaseCurrency);
+    }
+  }
+
+  async function refreshExchangeRates() {
+    refreshRatesBtn.disabled = true;
+    refreshRatesBtn.textContent = 'Refreshing...';
+    
+    try {
+      // Clear cache and reload
+      await fetch('/api/currency/clear-cache', { method: 'POST' });
+      await loadExchangeRates();
+    } catch (error) {
+      console.error('Error refreshing rates:', error);
+      showError('Failed to refresh exchange rates');
+    } finally {
+      refreshRatesBtn.disabled = false;
+      refreshRatesBtn.textContent = 'Refresh Rates';
+    }
+  }
+
+  async function performConversion() {
+    const amount = parseFloat(convertAmountInput?.value || '0');
+    const fromCurrency = convertFromSelect?.value;
+    const toCurrency = convertToSelect?.value;
+
+    if (!amount || !fromCurrency || !toCurrency) {
+      conversionResult?.classList.add('hidden');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/currency/convert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, fromCurrency, toCurrency })
+      });
+
+      if (response.ok) {
+        const conversion = await response.json();
+        
+        if (conversionResult) {
+          conversionResult.innerHTML = `
+            <div class="bg-blue-50 p-3 rounded-md">
+              <div class="font-medium">
+                ${formatCurrency(conversion.originalAmount.amount, conversion.originalAmount.currency)} = 
+                ${formatCurrency(conversion.convertedAmount.amount, conversion.convertedAmount.currency)}
+              </div>
+              <div class="text-xs text-gray-600 mt-1">
+                Rate: ${conversion.exchangeRate.toFixed(6)} • ${conversion.provider}
+              </div>
+            </div>
+          `;
+          conversionResult.classList.remove('hidden');
+        }
+      }
+    } catch (error) {
+      console.error('Error performing conversion:', error);
+      showError('Failed to convert currency');
+    }
+  }
+
+  async function updateUserCurrencyPreference(currency) {
+    try {
+      await fetch('/api/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currency_preference: currency })
+      });
+    } catch (error) {
+      console.error('Error updating currency preference:', error);
+    }
+  }
+
+  function getCurrencySymbol(currency) {
+    const symbols = {
+      'USD': '$', 'EUR': '€', 'GBP': '£', 'JPY': '¥',
+      'CAD': 'C$', 'AUD': 'A$', 'CHF': 'Fr', 'CNY': '¥'
+    };
+    return symbols[currency] || currency;
+  }
+
+  function formatCurrency(amount, currency) {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: currency === 'JPY' ? 0 : 2,
+      maximumFractionDigits: currency === 'JPY' ? 0 : 2
+    }).format(amount);
+  }
+
+  function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    
+    setTimeout(() => {
+      errorDiv.remove();
+    }, 5000);
+  }
+</script>
+
+<style>
+  .grid {
+    display: grid;
+  }
+  
+  .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  @media (min-width: 768px) {
+    .md\:grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .lg\:grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    
+    .lg\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>

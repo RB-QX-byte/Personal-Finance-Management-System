@@ -9,6 +9,7 @@ import BudgetOverview from '../components/BudgetOverview.astro';
 import GoalsOverview from '../components/GoalsOverview.astro';
 import QuickActions from '../components/QuickActions.astro';
 import RealtimeProvider from '../components/RealtimeProvider.astro';
+import DashboardCharts from '../components/DashboardCharts.astro';
 import { supabase } from '../lib/supabase';
 
 const user = Astro.locals.user;
@@ -184,6 +185,9 @@ try {
             <NetWorthTracker assets={totalAssets} liabilities={totalLiabilities} currency="$" />
             <QuickActions />
           </div>
+
+          <!-- Interactive Charts Dashboard -->
+          <DashboardCharts userId={user.id} />
 
           <!-- Recent Transactions (Real-time) -->
           <RealtimeTransactions initialTransactions={recentTransactions} />

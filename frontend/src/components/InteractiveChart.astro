@@ -1,0 +1,123 @@
+---
+export interface Props {
+  chartId: string;
+  chartType: 'line' | 'bar' | 'pie' | 'doughnut';
+  title: string;
+  data: any;
+  options?: any;
+  height?: number;
+}
+
+const { chartId, chartType, title, data, options = {}, height = 300 } = Astro.props;
+---
+
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+  <h3 class="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+  <div class="relative" style={`height: ${height}px;`}>
+    <canvas id={chartId} class="w-full h-full"></canvas>
+  </div>
+</div>
+
+<script define:vars={{ chartId, chartType, data, options }}>
+  import {
+    Chart,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    TimeScale
+  } from 'chart.js';
+  import 'chartjs-adapter-date-fns';
+
+  // Register Chart.js components
+  Chart.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler,
+    TimeScale
+  );
+
+  const ctx = document.getElementById(chartId);
+  if (ctx) {
+    const defaultOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'top',
+        },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          titleColor: 'white',
+          bodyColor: 'white',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderWidth: 1,
+          cornerRadius: 6,
+          displayColors: true,
+          callbacks: {
+            label: function(context) {
+              if (context.dataset.label) {
+                return context.dataset.label + ': $' + context.parsed.y.toLocaleString();
+              }
+              return '$' + context.parsed.y.toLocaleString();
+            }
+          }
+        }
+      },
+      scales: chartType === 'line' || chartType === 'bar' ? {
+        x: {
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)',
+          },
+          ticks: {
+            color: '#6b7280',
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: 'rgba(0, 0, 0, 0.1)',
+          },
+          ticks: {
+            color: '#6b7280',
+            callback: function(value) {
+              return '$' + value.toLocaleString();
+            }
+          }
+        }
+      } : {},
+      animation: {
+        duration: 1000,
+        easing: 'easeInOutQuart'
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      }
+    };
+
+    const mergedOptions = { ...defaultOptions, ...options };
+
+    new Chart(ctx, {
+      type: chartType,
+      data: data,
+      options: mergedOptions
+    });
+  }
+</script>

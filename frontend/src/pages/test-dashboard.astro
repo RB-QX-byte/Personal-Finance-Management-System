@@ -1,0 +1,359 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<Layout title="Feature Test Dashboard - Personal Finance Manager">
+  <div class="bg-gray-50 min-h-screen">
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center py-6">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900">Feature Test Dashboard</h1>
+            <p class="text-sm text-gray-600 mt-1">Validate all implemented features</p>
+          </div>
+          <div class="flex items-center space-x-4">
+            <a href="/dashboard" class="text-primary-600 hover:text-primary-700">
+              ← Back to Dashboard
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Dashboard Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Test Suites -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Test Suite Selection -->
+        <div class="lg:col-span-1">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Test Suites</h3>
+            <div class="space-y-3">
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-blue-50 border border-blue-200 hover:bg-blue-100 transition-colors"
+                data-suite="charts"
+              >
+                <div class="font-medium text-blue-900">Interactive Charts</div>
+                <div class="text-sm text-blue-700">Chart.js dashboard components</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-green-50 border border-green-200 hover:bg-green-100 transition-colors"
+                data-suite="ai-categorization"
+              >
+                <div class="font-medium text-green-900">AI Categorization</div>
+                <div class="text-sm text-green-700">AI-powered expense categorization</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-colors"
+                data-suite="ocr-scanning"
+              >
+                <div class="font-medium text-purple-900">OCR Scanning</div>
+                <div class="text-sm text-purple-700">Receipt scanning functionality</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-colors"
+                data-suite="ml-models"
+              >
+                <div class="font-medium text-orange-900">ML Models</div>
+                <div class="text-sm text-orange-700">95% accuracy categorization</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                data-suite="multi-currency"
+              >
+                <div class="font-medium text-indigo-900">Multi-Currency</div>
+                <div class="text-sm text-indigo-700">Currency conversion & rates</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-red-50 border border-red-200 hover:bg-red-100 transition-colors"
+                data-suite="tax-export"
+              >
+                <div class="font-medium text-red-900">Tax Export</div>
+                <div class="text-sm text-red-700">Tax software compatibility</div>
+              </button>
+              
+              <button 
+                class="test-suite-btn w-full text-left px-4 py-3 rounded-md bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
+                data-suite="all"
+              >
+                <div class="font-medium text-gray-900">Run All Tests</div>
+                <div class="text-sm text-gray-700">Complete feature validation</div>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Test Results -->
+        <div class="lg:col-span-2">
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Test Results</h3>
+              <div id="test-status" class="text-sm text-gray-500">Select a test suite to begin</div>
+            </div>
+            
+            <!-- Test Progress -->
+            <div id="test-progress" class="hidden mb-6">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700">Running Tests</span>
+                <span id="progress-text" class="text-sm text-gray-500">0/0</span>
+              </div>
+              <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- Test Summary -->
+            <div id="test-summary" class="hidden mb-6">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                  <div id="total-tests" class="text-2xl font-bold text-gray-900">0</div>
+                  <div class="text-sm text-gray-500">Total Tests</div>
+                </div>
+                <div class="text-center">
+                  <div id="passed-tests" class="text-2xl font-bold text-green-600">0</div>
+                  <div class="text-sm text-gray-500">Passed</div>
+                </div>
+                <div class="text-center">
+                  <div id="failed-tests" class="text-2xl font-bold text-red-600">0</div>
+                  <div class="text-sm text-gray-500">Failed</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Test Details -->
+            <div id="test-details" class="space-y-3">
+              <div class="text-center text-gray-500 py-12">
+                <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                </svg>
+                <p>No tests run yet</p>
+                <p class="text-sm">Select a test suite to start validation</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Overview -->
+      <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Implemented Features Overview</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">Interactive Charts</h4>
+              <p class="text-sm text-gray-600">Chart.js integration with real-time data visualization</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">AI Categorization</h4>
+              <p class="text-sm text-gray-600">OpenAI-powered expense categorization with confidence scoring</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">OCR Scanning</h4>
+              <p class="text-sm text-gray-600">Tesseract.js receipt scanning with data extraction</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">ML Models</h4>
+              <p class="text-sm text-gray-600">95% accuracy categorization with pattern learning</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">Multi-Currency</h4>
+              <p class="text-sm text-gray-600">Real-time exchange rates with automatic conversion</p>
+            </div>
+          </div>
+          
+          <div class="flex items-start space-x-3">
+            <div class="flex-shrink-0">
+              <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <h4 class="font-medium text-gray-900">Tax Export</h4>
+              <p class="text-sm text-gray-600">Compatible with TurboTax, QuickBooks, and other tax software</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{ user }}>
+  let currentTestSuite = null;
+  let testResults = null;
+
+  // DOM elements
+  const testSuiteBtns = document.querySelectorAll('.test-suite-btn');
+  const testStatus = document.getElementById('test-status');
+  const testProgress = document.getElementById('test-progress');
+  const progressBar = document.getElementById('progress-bar');
+  const progressText = document.getElementById('progress-text');
+  const testSummary = document.getElementById('test-summary');
+  const testDetails = document.getElementById('test-details');
+  const totalTestsEl = document.getElementById('total-tests');
+  const passedTestsEl = document.getElementById('passed-tests');
+  const failedTestsEl = document.getElementById('failed-tests');
+
+  // Initialize event listeners
+  testSuiteBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const suite = btn.dataset.suite;
+      runTestSuite(suite);
+    });
+  });
+
+  async function runTestSuite(suite) {
+    currentTestSuite = suite;
+    
+    // Update UI
+    testStatus.textContent = `Running ${suite} tests...`;
+    testProgress.classList.remove('hidden');
+    testSummary.classList.add('hidden');
+    testDetails.innerHTML = '<div class="text-center text-gray-500 py-8">Running tests...</div>';
+    
+    // Reset progress
+    updateProgress(0, 0, 0);
+    
+    try {
+      const response = await fetch('/api/test-features', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          testSuite: suite,
+          userId: user.id
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Test execution failed: ${response.status}`);
+      }
+
+      testResults = await response.json();
+      displayTestResults();
+      
+    } catch (error) {
+      console.error('Test execution error:', error);
+      testStatus.textContent = 'Test execution failed';
+      testDetails.innerHTML = `
+        <div class="text-center text-red-500 py-8">
+          <svg class="w-12 h-12 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <p class="font-medium">Test execution failed</p>
+          <p class="text-sm mt-1">${error.message}</p>
+        </div>
+      `;
+    } finally {
+      testProgress.classList.add('hidden');
+    }
+  }
+
+  function displayTestResults() {
+    if (!testResults) return;
+
+    // Update status
+    testStatus.textContent = `${testResults.suite} tests completed`;
+    
+    // Update summary
+    totalTestsEl.textContent = testResults.totalTests;
+    passedTestsEl.textContent = testResults.passedTests;
+    failedTestsEl.textContent = testResults.failedTests;
+    testSummary.classList.remove('hidden');
+    
+    // Update progress bar
+    const successRate = testResults.totalTests > 0 ? (testResults.passedTests / testResults.totalTests) * 100 : 0;
+    updateProgress(100, testResults.passedTests, testResults.totalTests);
+    
+    // Display test details
+    testDetails.innerHTML = testResults.tests.map(test => `
+      <div class="flex items-start space-x-3 p-4 rounded-md ${test.status === 'passed' ? 'bg-green-50' : 'bg-red-50'}">
+        <div class="flex-shrink-0">
+          ${test.status === 'passed' ? `
+            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          ` : `
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          `}
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h4 class="font-medium ${test.status === 'passed' ? 'text-green-900' : 'text-red-900'}">${test.name}</h4>
+            <span class="text-xs text-gray-500">${test.duration}ms</span>
+          </div>
+          <p class="text-sm ${test.status === 'passed' ? 'text-green-700' : 'text-red-700'} mt-1">
+            ${test.status === 'passed' ? test.message : (test.error || 'Test failed')}
+          </p>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateProgress(percentage, completed, total) {
+    progressBar.style.width = `${percentage}%`;
+    progressText.textContent = `${completed}/${total}`;
+  }
+</script>
+
+<style>
+  .test-suite-btn {
+    transition: all 0.2s ease;
+  }
+  
+  .test-suite-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+</style>

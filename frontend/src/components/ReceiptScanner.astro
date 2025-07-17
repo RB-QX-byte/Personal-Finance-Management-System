@@ -1,0 +1,367 @@
+---
+export interface Props {
+  onReceiptScanned?: (data: any) => void;
+  onCancel?: () => void;
+}
+
+const { onReceiptScanned, onCancel } = Astro.props;
+---
+
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" id="receipt-scanner-modal">
+  <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+    <div class="mt-3">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Scan Receipt</h3>
+        <button type="button" class="text-gray-400 hover:text-gray-600" id="close-scanner">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="space-y-4">
+        <!-- Upload Methods -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- File Upload -->
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
+            <input type="file" id="receipt-file" accept="image/*,.pdf" class="hidden" />
+            <label for="receipt-file" class="cursor-pointer">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+              </svg>
+              <p class="text-sm text-gray-600 mb-2">Upload Receipt</p>
+              <p class="text-xs text-gray-500">PNG, JPG, or PDF</p>
+            </label>
+          </div>
+
+          <!-- Camera Capture -->
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary-400 transition-colors">
+            <button type="button" id="camera-capture" class="w-full h-full">
+              <svg class="w-12 h-12 text-gray-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <p class="text-sm text-gray-600 mb-2">Take Photo</p>
+              <p class="text-xs text-gray-500">Use camera</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Camera Video -->
+        <div id="camera-container" class="hidden">
+          <video id="camera-video" autoplay playsinline class="w-full h-64 bg-gray-100 rounded-lg"></video>
+          <div class="flex justify-center mt-4 space-x-4">
+            <button id="take-photo" class="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700">
+              Take Photo
+            </button>
+            <button id="cancel-camera" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div id="preview-container" class="hidden">
+          <div class="border rounded-lg p-4 bg-gray-50">
+            <h4 class="font-medium text-gray-900 mb-3">Receipt Preview</h4>
+            <div class="flex gap-4">
+              <div class="flex-1">
+                <img id="receipt-preview" class="w-full h-48 object-contain bg-white rounded border" />
+              </div>
+              <div class="flex-1">
+                <div id="ocr-progress" class="hidden">
+                  <div class="flex items-center mb-2">
+                    <svg class="animate-spin h-5 w-5 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span class="text-sm text-gray-600">Processing receipt...</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="ocr-progress-bar" class="bg-primary-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                  </div>
+                </div>
+                <div id="ocr-results" class="hidden space-y-2">
+                  <h5 class="font-medium text-gray-700">Extracted Information:</h5>
+                  <div class="text-sm space-y-1">
+                    <div><span class="font-medium">Merchant:</span> <span id="extracted-merchant">-</span></div>
+                    <div><span class="font-medium">Amount:</span> <span id="extracted-amount">-</span></div>
+                    <div><span class="font-medium">Date:</span> <span id="extracted-date">-</span></div>
+                    <div><span class="font-medium">Category:</span> <span id="extracted-category">-</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            id="cancel-scan"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            id="use-data"
+            class="px-4 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled
+          >
+            Use This Data
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { createWorker } from 'tesseract.js';
+
+  const modal = document.getElementById('receipt-scanner-modal');
+  const closeBtn = document.getElementById('close-scanner');
+  const cancelBtn = document.getElementById('cancel-scan');
+  const fileInput = document.getElementById('receipt-file') as HTMLInputElement;
+  const cameraBtn = document.getElementById('camera-capture');
+  const cameraContainer = document.getElementById('camera-container');
+  const cameraVideo = document.getElementById('camera-video') as HTMLVideoElement;
+  const takePhotoBtn = document.getElementById('take-photo');
+  const cancelCameraBtn = document.getElementById('cancel-camera');
+  const previewContainer = document.getElementById('preview-container');
+  const previewImage = document.getElementById('receipt-preview') as HTMLImageElement;
+  const ocrProgress = document.getElementById('ocr-progress');
+  const ocrProgressBar = document.getElementById('ocr-progress-bar');
+  const ocrResults = document.getElementById('ocr-results');
+  const useDataBtn = document.getElementById('use-data');
+
+  let currentStream: MediaStream | null = null;
+  let extractedData: any = null;
+
+  function closeModal() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+    }
+    modal?.remove();
+  }
+
+  function showError(message: string) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-message bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4';
+    errorDiv.textContent = message;
+    modal?.querySelector('.mt-3')?.insertBefore(errorDiv, modal.querySelector('.space-y-4'));
+  }
+
+  // Event listeners
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  
+  fileInput?.addEventListener('change', handleFileSelect);
+  cameraBtn?.addEventListener('click', startCamera);
+  takePhotoBtn?.addEventListener('click', capturePhoto);
+  cancelCameraBtn?.addEventListener('click', stopCamera);
+  useDataBtn?.addEventListener('click', useExtractedData);
+
+  async function handleFileSelect(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+
+    if (file.type === 'application/pdf') {
+      showError('PDF processing not yet implemented. Please use image files.');
+      return;
+    }
+
+    const imageUrl = URL.createObjectURL(file);
+    showPreview(imageUrl);
+    await processImage(imageUrl);
+  }
+
+  async function startCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      currentStream = stream;
+      cameraVideo.srcObject = stream;
+      cameraContainer?.classList.remove('hidden');
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      showError('Unable to access camera. Please check permissions.');
+    }
+  }
+
+  function stopCamera() {
+    if (currentStream) {
+      currentStream.getTracks().forEach(track => track.stop());
+      currentStream = null;
+    }
+    cameraContainer?.classList.add('hidden');
+  }
+
+  async function capturePhoto() {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    
+    canvas.width = cameraVideo.videoWidth;
+    canvas.height = cameraVideo.videoHeight;
+    
+    context?.drawImage(cameraVideo, 0, 0);
+    
+    const imageDataUrl = canvas.toDataURL('image/jpeg');
+    stopCamera();
+    showPreview(imageDataUrl);
+    await processImage(imageDataUrl);
+  }
+
+  function showPreview(imageUrl: string) {
+    previewImage.src = imageUrl;
+    previewContainer?.classList.remove('hidden');
+  }
+
+  async function processImage(imageUrl: string) {
+    try {
+      ocrProgress?.classList.remove('hidden');
+      ocrResults?.classList.add('hidden');
+      useDataBtn!.disabled = true;
+
+      // Create Tesseract worker
+      const worker = await createWorker('eng');
+      
+      // Set up progress tracking
+      worker.setParameters({
+        tessedit_pageseg_mode: '1', // Automatic page segmentation
+        tessedit_ocr_engine_mode: '1', // LSTM OCR engine
+      });
+
+      // Process the image with progress tracking
+      const { data } = await worker.recognize(imageUrl, {
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            const progress = Math.round(m.progress * 100);
+            if (ocrProgressBar) {
+              ocrProgressBar.style.width = `${progress}%`;
+            }
+          }
+        }
+      });
+
+      await worker.terminate();
+
+      // Process the extracted text
+      const extractedText = data.text;
+      extractedData = parseReceiptText(extractedText);
+      
+      // Display results
+      displayResults(extractedData);
+      
+      ocrProgress?.classList.add('hidden');
+      ocrResults?.classList.remove('hidden');
+      useDataBtn!.disabled = false;
+
+    } catch (error) {
+      console.error('OCR processing error:', error);
+      showError('Failed to process receipt. Please try again.');
+      ocrProgress?.classList.add('hidden');
+    }
+  }
+
+  function parseReceiptText(text: string): any {
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    // Extract merchant (usually first few lines)
+    const merchant = lines.slice(0, 3).join(' ').trim();
+    
+    // Extract amount (look for price patterns)
+    const amountRegex = /\$?(\d+\.?\d*)/g;
+    const amounts = text.match(amountRegex);
+    const amount = amounts ? amounts[amounts.length - 1] : '0.00';
+    
+    // Extract date (look for date patterns)
+    const dateRegex = /(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/g;
+    const dateMatch = text.match(dateRegex);
+    const date = dateMatch ? dateMatch[0] : new Date().toISOString().split('T')[0];
+    
+    // Basic category inference
+    const category = inferCategory(text);
+    
+    return {
+      merchant: merchant || 'Unknown Merchant',
+      amount: parseFloat(amount.replace('$', '')) || 0,
+      date: formatDate(date),
+      category,
+      rawText: text
+    };
+  }
+
+  function inferCategory(text: string): string {
+    const lowerText = text.toLowerCase();
+    
+    const categories = [
+      { keywords: ['grocery', 'supermarket', 'food', 'market'], category: 'Food & Dining' },
+      { keywords: ['gas', 'fuel', 'shell', 'exxon', 'chevron'], category: 'Transportation' },
+      { keywords: ['restaurant', 'cafe', 'coffee', 'dining'], category: 'Food & Dining' },
+      { keywords: ['pharmacy', 'drugstore', 'medical', 'cvs', 'walgreens'], category: 'Healthcare' },
+      { keywords: ['walmart', 'target', 'amazon', 'store'], category: 'Shopping' },
+    ];
+
+    for (const cat of categories) {
+      if (cat.keywords.some(keyword => lowerText.includes(keyword))) {
+        return cat.category;
+      }
+    }
+
+    return 'Other';
+  }
+
+  function formatDate(dateStr: string): string {
+    try {
+      const date = new Date(dateStr);
+      return date.toISOString().split('T')[0];
+    } catch {
+      return new Date().toISOString().split('T')[0];
+    }
+  }
+
+  function displayResults(data: any) {
+    const merchantEl = document.getElementById('extracted-merchant');
+    const amountEl = document.getElementById('extracted-amount');
+    const dateEl = document.getElementById('extracted-date');
+    const categoryEl = document.getElementById('extracted-category');
+
+    if (merchantEl) merchantEl.textContent = data.merchant;
+    if (amountEl) amountEl.textContent = `$${data.amount.toFixed(2)}`;
+    if (dateEl) dateEl.textContent = data.date;
+    if (categoryEl) categoryEl.textContent = data.category;
+  }
+
+  function useExtractedData() {
+    if (extractedData) {
+      // Dispatch custom event with extracted data
+      window.dispatchEvent(new CustomEvent('receiptScanned', { 
+        detail: extractedData 
+      }));
+      closeModal();
+    }
+  }
+
+  // Close modal when clicking outside
+  modal?.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+</script>
+
+<style>
+  .animate-spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
