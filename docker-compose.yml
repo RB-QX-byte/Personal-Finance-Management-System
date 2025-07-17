@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=:8080
+      - GIN_MODE=release
+      - DATABASE_URL=postgresql://postgres:20AUgfoUsJe2Sdxf@db.ualunvuzvprecreqygrv.supabase.co:5432/postgres
+      - SUPABASE_URL=https://ualunvuzvprecreqygrv.supabase.co
+      - SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbHVudnV6dnByZWNyZXF5Z3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzkyNjcsImV4cCI6MjA2ODIxNTI2N30.6eqSL7QDEEQdJ8rB9VK_HSRS4jYNCa0XHXULrGANFMM
+      - JWT_SECRET=RrRLU6HFmNcPjJCWhEsOUhtDjD3sylwwGIjHuJr3zvLbURtyEPkKIVmGK8zczyCR4LI6gSfxvevzEUMuaduKow==
+    networks:
+      - finance-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "4321:4321"
+    environment:
+      - PUBLIC_SUPABASE_URL=https://ualunvuzvprecreqygrv.supabase.co
+      - PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbHVudnV6dnByZWNyZXF5Z3J2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI2MzkyNjcsImV4cCI6MjA2ODIxNTI2N30.6eqSL7QDEEQdJ8rB9VK_HSRS4jYNCa0XHXULrGANFMM
+      - BACKEND_URL=http://backend:8080
+      - HOST=0.0.0.0
+      - PORT=4321
+    depends_on:
+      - backend
+    networks:
+      - finance-network
+
+networks:
+  finance-network:
+    driver: bridge 

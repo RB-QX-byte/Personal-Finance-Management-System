@@ -1,25 +1,146 @@
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Dependencies
+node_modules/
+vendor/
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 dev-debug.log
 
-# Dependency directories
-node_modules/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
 
-# Environment variables
-.env
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
 
-# Editor directories and files
-.idea
-.vscode
+# nyc test coverage
+.nyc_output
+
+# Build outputs
+dist/
+build/
+.next/
+.nuxt/
+.astro/
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+tmp/
+*.test
+*.out
+go.work
+go.work.sum
+
+# Docker
+*.dockerignore
+.docker/
+docker-compose.override.yml
+.env.docker
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.project
+.classpath
+.settings/
 
 # OS specific
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# AWS and Deployment
+.aws/
+*.pem
+*.key
+*.crt
+terraform.tfstate*
+.terraform/
+
+# Cache directories
+.npm
+.eslintcache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env.test
+.env.production
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Temporary folders
+tmp/
+temp/
+
+# Runtime files
+*.pid
+*.lock
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Test files
+coverage.out
