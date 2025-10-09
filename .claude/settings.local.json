@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose up:*)",
+      "Bash(docker:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(go:*)",
+      "Bash(choco install:*)",
+      "Bash(winget install:*)",
+      "Bash(curl:*)",
+      "Read(//c/**)",
+      "Bash(export:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
