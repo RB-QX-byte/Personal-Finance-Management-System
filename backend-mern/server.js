@@ -26,8 +26,34 @@ import reportRoutes from './routes/reports.js';
 const app = express();
 
 // Middleware
+// Allow multiple origins (production, preview deployments, and localhost)
+const allowedOrigins = [
+  'https://personal-finance-management-system-rouge.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  /^https:\/\/personal-finance-management-system-.*\.vercel\.app$/
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    // Check if origin matches any allowed origin
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return origin === allowedOrigin;
+      }
+      // Check regex patterns (for Vercel preview deployments)
+      return allowedOrigin.test(origin);
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
