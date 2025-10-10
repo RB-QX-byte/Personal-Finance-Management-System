@@ -13,7 +13,11 @@
       "Bash(export:*)",
       "Bash(test:*)",
       "Bash(cat:*)",
-      "Bash(netstat:*)"
+      "Bash(netstat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
