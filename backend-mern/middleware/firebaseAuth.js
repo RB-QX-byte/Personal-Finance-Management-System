@@ -1,8 +1,12 @@
 import admin from 'firebase-admin';
 import User from '../models/User.js';
 
-// Initialize Firebase Admin with service account from environment variables
-if (!admin.apps.length) {
+// Function to initialize Firebase Admin (called lazily on first use)
+function initializeFirebase() {
+  if (admin.apps.length) {
+    return; // Already initialized
+  }
+
   // Use environment variables for Firebase credentials
   const serviceAccount = {
     type: process.env.FIREBASE_TYPE || 'service_account',
@@ -22,10 +26,15 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount),
     projectId: serviceAccount.project_id,
   });
+
+  console.log('✅ Firebase Admin initialized successfully');
 }
 
 export const verifyFirebaseToken = async (req, res, next) => {
   try {
+    // Initialize Firebase Admin if not already initialized
+    initializeFirebase();
+
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {

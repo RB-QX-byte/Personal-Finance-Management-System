@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
+
+// Load environment variables FIRST before any other imports
+dotenv.config();
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 
 // Import routes
@@ -18,8 +22,6 @@ import aiRoutes from './routes/ai.js';
 import taxRoutes from './routes/tax.js';
 import profileRoutes from './routes/profile.js';
 import reportRoutes from './routes/reports.js';
-
-dotenv.config();
 
 const app = express();
 
