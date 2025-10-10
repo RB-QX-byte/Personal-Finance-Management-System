@@ -1,0 +1,62 @@
+╔══════════════════════════════════════════════════════════════════════════╗
+║                    PERSONAL FINANCE MANAGER - MERN                       ║
+║                           QUICK START GUIDE                              ║
+╚══════════════════════════════════════════════════════════════════════════╝
+
+RUN THE APPLICATION
+═══════════════════════════════════════════════════════════════════════════
+
+STEP 1: Run Backend (Terminal 1)
+─────────────────────────────────
+cd backend-mern
+npm run dev
+
+→ Backend runs on: http://localhost:5000
+
+STEP 2: Run Frontend (Terminal 2)  
+──────────────────────────────────
+cd frontend-mern
+npm run dev
+
+→ Frontend runs on: http://localhost:3000
+
+STEP 3: Open Browser
+────────────────────
+→ http://localhost:3000
+
+═══════════════════════════════════════════════════════════════════════════
+
+FEATURES INCLUDED
+═══════════════════════════════════════════════════════════════════════════
+
+✓ User Authentication (Firebase)
+✓ Transaction Management
+✓ AI-Powered Categorization (with OpenAI API key)
+✓ Receipt Scanning (OCR)
+✓ Multi-Currency Support (30+ currencies)
+✓ Budget & Goals Tracking
+✓ Reports & Analytics
+✓ Tax Export
+
+═══════════════════════════════════════════════════════════════════════════
+
+OPTIONAL: Enable AI Features
+═══════════════════════════════════════════════════════════════════════════
+
+1. Get free API key: https://platform.openai.com/api-keys ($5 free credit)
+2. Edit: backend-mern/.env
+3. Add: OPENAI_API_KEY=sk-your-key-here
+4. Restart backend
+
+Benefits: Smart transaction categorization, AI suggestions
+Cost: ~$0.002 per transaction
+
+═══════════════════════════════════════════════════════════════════════════
+
+TECH STACK
+═══════════════════════════════════════════════════════════════════════════
+
+Backend:  Node.js + Express + MongoDB + Firebase Auth
+Frontend: React + Vite + Firebase + TailwindCSS
+
+═══════════════════════════════════════════════════════════════════════════

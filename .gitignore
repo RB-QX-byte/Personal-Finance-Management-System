@@ -3,6 +3,15 @@
 .env.local
 .env.*.local
 *.env
+backend-mern/.env
+frontend-mern/.env
+backend/.env
+frontend/.env
+
+# Firebase Service Account (NEVER COMMIT THIS!)
+firebase-service-account.json
+**/firebase-service-account.json
+backend-mern/firebase-service-account.json
 
 # Dependencies
 node_modules/

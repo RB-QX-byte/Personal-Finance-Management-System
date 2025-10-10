@@ -10,7 +10,10 @@
       "Bash(winget install:*)",
       "Bash(curl:*)",
       "Read(//c/**)",
-      "Bash(export:*)"
+      "Bash(export:*)",
+      "Bash(test:*)",
+      "Bash(cat:*)",
+      "Bash(netstat:*)"
     ],
     "deny": [],
     "ask": []
