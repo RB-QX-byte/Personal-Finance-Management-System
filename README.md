@@ -1,47 +1,86 @@
 # Personal Finance Management System
 
-A comprehensive financial management application built with Astro.js, Go, and Supabase, with full Docker containerization and AWS deployment support.
+A comprehensive financial management application offering dual-stack implementations:
+1. **MERN Stack**: MongoDB, Express, React, Node.js
+2. **Go/Astro Stack**: Go, Astro.js, Supabase
+
+Both implementations share the same modern UI/UX design and core financial management features.
 
 ## Tech Stack
 
+### Option 1: MERN Stack (Recommended for React developers)
+- **Frontend**: React.js with Tailwind CSS
+- **Backend**: Node.js with Express
+- **Database**: MongoDB
+- **Authentication**: Firebase Auth with JWT
+- **Styling**: Tailwind CSS with custom design system
+
+### Option 2: Astro/Go Stack
 - **Frontend**: Astro.js with Tailwind CSS (SSR)
 - **Backend**: Go with Gin framework
 - **Database**: Supabase (PostgreSQL + Auth)
-- **Authentication**: Supabase Auth with JWT
-- **Real-time**: Supabase Realtime
+- **Authentication**: Supabase Auth
 - **Containerization**: Docker & Docker Compose
-- **Deployment**: AWS (App Runner, ECS, Lambda, EC2)
-- **CI/CD**: GitHub Actions
+- **Deployment**: AWS (App Runner, ECS)
 
 ## Project Structure
 
 ```
 .
+├── frontend-mern/               # React frontend application
+│   ├── src/                    # React components and pages
+│   ├── public/                 # Static assets
+│   └── package.json            # Frontend dependencies
+├── backend-mern/                # Node.js/Express backend
+│   ├── models/                 # Mongoose schemas
+│   ├── routes/                 # API endpoints
+│   ├── services/               # Business logic
+│   └── package.json            # Backend dependencies
 ├── frontend/                    # Astro.js frontend application
-│   ├── src/                    # Source code
-│   ├── Dockerfile              # Frontend container configuration
-│   └── package.json            # Node.js dependencies
 ├── backend/                     # Go backend service
-│   ├── cmd/                    # Application entry point
-│   ├── internal/               # Internal packages
-│   ├── Dockerfile              # Backend container configuration
-│   └── go.mod                  # Go dependencies
-├── supabase/                    # Supabase configuration and migrations
-├── .github/workflows/           # CI/CD pipelines
-├── docker-compose.yml           # Local development with Docker
-├── aws-deployment.md            # Comprehensive AWS deployment guide
-├── DEPLOYMENT_QUICKSTART.md     # Quick deployment instructions
-├── env.example                  # Environment variables template
+├── supabase/                    # Supabase configuration
+├── docker-compose.yml           # Docker configuration
 └── README.md                    # This file
 ```
 
-## Quick Start (Docker - Recommended)
+## Quick Start: MERN Stack
+
+### Prerequisites
+- Node.js 18+
+- MongoDB (Local or Atlas)
+- Firebase Project (for Auth)
+
+### 1. Backend Setup
+```bash
+cd backend-mern
+# Install dependencies
+npm install
+
+# Configure Environment Variables
+cp .env.example .env
+# Edit .env and add your MongoDB URI and Firebase Admin credentials
+# You can get Firebase credentials from Project Settings > Service Accounts
+
+# Run Server
+npm run dev    # Runs on http://localhost:5000
+```
+
+### 2. Frontend Setup
+```bash
+cd frontend-mern
+# Install dependencies
+npm install
+
+# Run Server
+npm run dev    # Runs on http://localhost:5173
+```
+
+## Quick Start: Astro/Go Stack (Docker - Recommended)
 
 ### Prerequisites
 
 - Docker & Docker Compose
-- Git
-- Supabase project (create at https://supabase.com)
+- Supabase project
 
 ### 1. Clone and Setup
 
@@ -66,72 +105,12 @@ JWT_SECRET=your_secure_jwt_secret
 ```bash
 # Build and start all services
 docker-compose up --build
-
-# Or run in background
-docker-compose up -d --build
 ```
 
 ### 4. Access the Application
 
 - **Frontend**: http://localhost:4321
 - **Backend API**: http://localhost:8080
-- **Backend Health**: http://localhost:8080/health
-- **Frontend Health**: http://localhost:4321/api/health
-
-## Manual Setup (Without Docker)
-
-### Prerequisites
-
-- Node.js 18+ 
-- Go 1.24+
-- Supabase CLI
-- Git
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev    # Runs on http://localhost:4321
-```
-
-### Backend Setup
-
-```bash
-cd backend
-go mod download
-go run cmd/main.go    # Runs on http://localhost:8080
-```
-
-### Database Setup
-
-```bash
-cd supabase
-supabase migration up
-```
-
-## Development
-
-### Local URLs
-- **Frontend**: http://localhost:4321
-- **Backend**: http://localhost:8080
-- **Supabase Dashboard**: https://app.supabase.com
-
-### Docker Commands
-```bash
-# View logs
-docker-compose logs -f
-
-# Rebuild specific service
-docker-compose build backend
-docker-compose build frontend
-
-# Stop all services
-docker-compose down
-
-# Clean rebuild
-docker-compose down && docker-compose build --no-cache && docker-compose up
-```
 
 ## Features
 
@@ -139,98 +118,42 @@ docker-compose down && docker-compose build --no-cache && docker-compose up
 - 💰 **Account and transaction management**
 - 📊 **Budget tracking and goal setting**
 - 📈 **Financial analytics dashboard**
-- ⚡ **Real-time data synchronization**
+- ⚡ **Real-time data updates**
 - 📱 **Responsive mobile-first design**
-- 🐳 **Fully containerized with Docker**
-- ☁️ **AWS deployment ready**
+- 🎨 **Modern UI with consistent design system**
 
-## Testing
+## Development
 
-```bash
-# Backend tests
-cd backend && go test ./...
+### Frontend (React)
+- Uses Vite for fast development
+- Tailwind CSS for styling
+- Context API for state management
+- Axios for API requests
 
-# Frontend tests (if configured)
-cd frontend && npm test
+### Backend (Node.js)
+- Express framework
+- Mongoose for ODM
+- Firebase Admin for secure authentication
+- RESTful API architecture
 
-# Test Docker containers
-curl http://localhost:8080/health
-curl http://localhost:4321/api/health
-```
+## Deployment
 
-## Deployment Options
+### MERN Stack
+- **Frontend**: Vercel, Netlify, or AWS S3/CloudFront
+- **Backend**: Heroku, Render, AWS Elastic Beanstalk, or App Runner
+- **Database**: MongoDB Atlas
 
-### 🚀 Quick Deploy (30 minutes)
-See [`DEPLOYMENT_QUICKSTART.md`](./DEPLOYMENT_QUICKSTART.md) for fastest deployment to AWS App Runner.
-
-### 📚 Comprehensive Deployment Guide
-See [`aws-deployment.md`](./aws-deployment.md) for all deployment options:
-
-| Option | Complexity | Cost/Month | Best For |
-|--------|------------|------------|----------|
-| **AWS App Runner** | Low | $50-100 | Getting started |
-| **AWS Lambda** | Medium | $10-30 | Low traffic |
-| **Amazon ECS** | High | $80-140 | Production |
-| **EC2 + Docker** | Medium | $20-40 | Budget-conscious |
-
-### CI/CD
-GitHub Actions workflows are included for automated deployments:
-- `.github/workflows/deploy-aws-app-runner.yml`
-- `.github/workflows/deploy-ecs.yml`
-
-## Environment Variables
-
-Required environment variables (see `env.example`):
-
-```bash
-# Supabase Configuration
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
-PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-
-# Database
-DATABASE_URL=postgresql://postgres:password@db.your-project.supabase.co:5432/postgres
-
-# Security
-JWT_SECRET=your_secure_random_jwt_secret
-
-# Networking
-PORT=:8080
-HOST=0.0.0.0
-```
-
-## Troubleshooting
-
-### Docker Issues
-```bash
-# Check container status
-docker-compose ps
-
-# View detailed logs
-docker-compose logs frontend
-docker-compose logs backend
-
-# Restart specific service
-docker-compose restart frontend
-```
-
-### Common Issues
-- **Port conflicts**: Make sure ports 4321 and 8080 are free
-- **Docker not starting**: Ensure Docker Desktop is running
-- **Database connection**: Verify Supabase credentials in `.env`
-- **CORS errors**: Check backend CORS configuration for frontend URL
+### Astro/Go Stack
+- **AWS**: App Runner, ECS, or EC2 (see `aws-deployment.md`)
+- **Container**: Docker Hub / ECR
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test with Docker: `docker-compose up --build`
-5. Submit a pull request
+4. Submit a pull request
 
-## Support
+## License
 
-- 📖 **Documentation**: Check `aws-deployment.md` and `DEPLOYMENT_QUICKSTART.md`
-- 🐛 **Issues**: Use GitHub Issues for bug reports
-- 💬 **Discussions**: Use GitHub Discussions for questions
+This project is licensed under the ISC License.

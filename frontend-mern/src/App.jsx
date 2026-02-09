@@ -8,6 +8,7 @@ import Accounts from './pages/Accounts';
 import Budgets from './pages/Budgets';
 import Goals from './pages/Goals';
 import Settings from './pages/Settings';
+import Notifications from './pages/Notifications';
 import Layout from './components/Layout';
 
 // Protected Route Component
@@ -75,6 +76,7 @@ function App() {
                     <Route path="/accounts" element={<Accounts />} />
                     <Route path="/budgets" element={<Budgets />} />
                     <Route path="/goals" element={<Goals />} />
+                    <Route path="/notifications" element={<Notifications />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                   </Routes>
