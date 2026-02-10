@@ -42,6 +42,14 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  taxDeductible: {
+    type: Boolean,
+    default: false
+  },
+  businessExpense: {
+    type: Boolean,
+    default: false
+  },
   tags: [{
     type: String
   }],

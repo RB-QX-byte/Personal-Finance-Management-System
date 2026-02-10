@@ -69,6 +69,29 @@ router.get('/', async (req, res) => {
         }
       },
       {
+        $lookup: {
+          from: 'categories',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $unwind: {
+          path: '$category',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          total: 1,
+          count: 1,
+          categoryName: { $ifNull: ['$category.name', 'Uncategorized'] },
+          categoryColor: { $ifNull: ['$category.color', '#6b7280'] }
+        }
+      },
+      {
         $sort: { total: -1 }
       },
       {

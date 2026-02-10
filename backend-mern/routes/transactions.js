@@ -162,6 +162,83 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// @route   PATCH /api/transactions/:id
+// @desc    Partially update a transaction (e.g., mark as tax-deductible)
+// @access  Private
+router.patch('/:id', async (req, res) => {
+  try {
+    const transaction = await Transaction.findOne({ _id: req.params.id, userId: req.user._id });
+
+    if (!transaction) {
+      return res.status(404).json({ error: 'Transaction not found' });
+    }
+
+    // Build update object from allowed fields
+    const allowedFields = [
+      'accountId', 'categoryId', 'amount', 'transactionType',
+      'description', 'transactionDate', 'notes', 'taxDeductible',
+      'businessExpense', 'tags'
+    ];
+
+    const updateData = {};
+    for (const field of allowedFields) {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    }
+
+    // Handle account_id / category_id aliases from frontend
+    if (req.body.account_id !== undefined) updateData.accountId = req.body.account_id;
+    if (req.body.category_id !== undefined) updateData.categoryId = req.body.category_id;
+    if (req.body.transaction_type !== undefined) updateData.transactionType = req.body.transaction_type;
+    if (req.body.transaction_date !== undefined) updateData.transactionDate = req.body.transaction_date;
+
+    updateData.updatedAt = Date.now();
+
+    // If amount or type changed, update account balance
+    if (updateData.amount !== undefined || updateData.transactionType !== undefined) {
+      const account = await Account.findById(transaction.accountId);
+      if (account) {
+        // Reverse old transaction
+        if (transaction.transactionType === 'income') {
+          account.balance -= transaction.amount;
+        } else if (transaction.transactionType === 'expense') {
+          account.balance += transaction.amount;
+        }
+
+        // Apply new values
+        const newAmount = updateData.amount !== undefined ? parseFloat(updateData.amount) : transaction.amount;
+        const newType = updateData.transactionType || transaction.transactionType;
+
+        if (newType === 'income') {
+          account.balance += newAmount;
+        } else if (newType === 'expense') {
+          account.balance -= newAmount;
+        }
+
+        await account.save();
+      }
+    }
+
+    if (updateData.amount !== undefined) {
+      updateData.amount = parseFloat(updateData.amount);
+    }
+
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    )
+      .populate('accountId', 'name accountType')
+      .populate('categoryId', 'name color');
+
+    res.json(updatedTransaction);
+  } catch (error) {
+    console.error('Patch transaction error:', error);
+    res.status(500).json({ error: 'Error updating transaction' });
+  }
+});
+
 // @route   DELETE /api/transactions/:id
 // @desc    Delete a transaction
 // @access  Private
