@@ -29,7 +29,7 @@ const NotificationBell = () => {
             const response = await api.get('/notifications?limit=5');
             const notifs = response.data || [];
             setNotifications(notifs);
-            setUnreadCount(notifs.filter(n => !n.read).length);
+            setUnreadCount(notifs.filter(n => !n.isRead).length);
         } catch (error) {
             console.error('Error fetching notifications:', error);
             setNotifications([]);
@@ -41,9 +41,9 @@ const NotificationBell = () => {
 
     const markAsRead = async (notificationId) => {
         try {
-            await api.patch(`/notifications/${notificationId}`, { read: true });
+            await api.put(`/notifications/${notificationId}`);
             setNotifications(notifications.map(n =>
-                n._id === notificationId ? { ...n, read: true } : n
+                n._id === notificationId ? { ...n, isRead: true } : n
             ));
             setUnreadCount(prev => Math.max(0, prev - 1));
         } catch (error) {
@@ -53,8 +53,8 @@ const NotificationBell = () => {
 
     const markAllAsRead = async () => {
         try {
-            await api.post('/notifications/actions', { action: 'mark_all_read' });
-            setNotifications(notifications.map(n => ({ ...n, read: true })));
+            await api.put('/notifications/actions/mark-all-read');
+            setNotifications(notifications.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
         } catch (error) {
             console.error('Error marking all as read:', error);
@@ -145,14 +145,14 @@ const NotificationBell = () => {
                             notifications.map((notification) => (
                                 <div
                                     key={notification._id}
-                                    onClick={() => !notification.read && markAsRead(notification._id)}
-                                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.read ? 'bg-primary-50' : ''
+                                    onClick={() => !notification.isRead && markAsRead(notification._id)}
+                                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-50' : ''
                                         }`}
                                 >
                                     <div className="flex items-start space-x-3">
                                         <span className="text-xl">{getNotificationIcon(notification.type)}</span>
                                         <div className="flex-1 min-w-0">
-                                            <p className={`text-sm ${!notification.read ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
+                                            <p className={`text-sm ${!notification.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
                                                 {notification.title}
                                             </p>
                                             <p className="text-xs text-gray-500 mt-1 truncate">
@@ -162,7 +162,7 @@ const NotificationBell = () => {
                                                 {formatTimeAgo(notification.createdAt)}
                                             </p>
                                         </div>
-                                        {!notification.read && (
+                                        {!notification.isRead && (
                                             <span className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2"></span>
                                         )}
                                     </div>

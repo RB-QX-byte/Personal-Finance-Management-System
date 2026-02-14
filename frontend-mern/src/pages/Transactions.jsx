@@ -61,10 +61,21 @@ const Transactions = () => {
 
   const handleSubmit = async (data) => {
     try {
+      // Transform camelCase to snake_case for backend
+      const payload = {
+        account_id: data.accountId,
+        category_id: data.categoryId,
+        amount: data.amount,
+        transaction_type: data.transactionType,
+        description: data.description,
+        transaction_date: data.transactionDate,
+        notes: data.notes,
+      };
+
       if (editingTransaction) {
-        await api.put(`/transactions/${editingTransaction._id}`, data);
+        await api.put(`/transactions/${editingTransaction._id}`, payload);
       } else {
-        await api.post('/transactions', data);
+        await api.post('/transactions', payload);
       }
       setShowModal(false);
       setEditingTransaction(null);

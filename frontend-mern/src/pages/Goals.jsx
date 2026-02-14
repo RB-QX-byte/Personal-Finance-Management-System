@@ -116,8 +116,8 @@ const Goals = () => {
     const amount = prompt('Enter amount to add:');
     if (amount && !isNaN(parseFloat(amount))) {
       try {
-        await api.patch(`/goals/${goal._id}/progress`, {
-          currentAmount: goal.currentAmount + parseFloat(amount)
+        await api.put(`/goals/${goal._id}/progress`, {
+          amount: parseFloat(amount)
         });
         fetchGoals();
       } catch (error) {
@@ -423,8 +423,8 @@ const Goals = () => {
                         type="button"
                         onClick={() => setFormData({ ...formData, icon })}
                         className={`w-10 h-10 text-xl rounded-md border-2 transition-colors ${formData.icon === icon
-                            ? 'border-primary-500 bg-primary-50'
-                            : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
                           }`}
                       >
                         {icon}

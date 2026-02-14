@@ -23,9 +23,9 @@ const Notifications = () => {
 
     const markAsRead = async (notificationId) => {
         try {
-            await api.patch(`/notifications/${notificationId}`, { read: true });
+            await api.put(`/notifications/${notificationId}`);
             setNotifications(notifications.map(n =>
-                n._id === notificationId ? { ...n, read: true } : n
+                n._id === notificationId ? { ...n, isRead: true } : n
             ));
         } catch (error) {
             console.error('Error marking notification as read:', error);
@@ -34,8 +34,8 @@ const Notifications = () => {
 
     const markAllAsRead = async () => {
         try {
-            await api.post('/notifications/actions', { action: 'mark_all_read' });
-            setNotifications(notifications.map(n => ({ ...n, read: true })));
+            await api.put('/notifications/actions/mark-all-read');
+            setNotifications(notifications.map(n => ({ ...n, isRead: true })));
         } catch (error) {
             console.error('Error marking all as read:', error);
         }
@@ -53,7 +53,8 @@ const Notifications = () => {
     const clearAllNotifications = async () => {
         if (window.confirm('Are you sure you want to clear all notifications?')) {
             try {
-                await api.post('/notifications/actions', { action: 'clear_all' });
+                // Backend has no clear-all endpoint, delete individually
+                await Promise.all(notifications.map(n => api.delete(`/notifications/${n._id}`)));
                 setNotifications([]);
             } catch (error) {
                 console.error('Error clearing notifications:', error);
@@ -91,12 +92,12 @@ const Notifications = () => {
     };
 
     const filteredNotifications = notifications.filter(n => {
-        if (filter === 'unread') return !n.read;
-        if (filter === 'read') return n.read;
+        if (filter === 'unread') return !n.isRead;
+        if (filter === 'read') return n.isRead;
         return true;
     });
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     if (loading) {
         return (
@@ -152,8 +153,8 @@ const Notifications = () => {
                         <button
                             onClick={() => setFilter('all')}
                             className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${filter === 'all'
-                                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             All ({notifications.length})
@@ -161,8 +162,8 @@ const Notifications = () => {
                         <button
                             onClick={() => setFilter('unread')}
                             className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${filter === 'unread'
-                                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             Unread ({unreadCount})
@@ -170,8 +171,8 @@ const Notifications = () => {
                         <button
                             onClick={() => setFilter('read')}
                             className={`flex-1 py-3 text-center text-sm font-medium transition-colors ${filter === 'read'
-                                    ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
-                                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                                ? 'text-primary-600 border-b-2 border-primary-600 bg-primary-50'
+                                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                                 }`}
                         >
                             Read ({notifications.length - unreadCount})
@@ -205,7 +206,8 @@ const Notifications = () => {
                             return (
                                 <div
                                     key={notification._id}
-                                    className={`bg-white rounded-lg shadow-sm border border-gray-200 p-4 transition-all hover:shadow-md ${!notification.read ? 'border-l-4 border-l-primary-500' : ''
+                                    onClick={() => !notification.isRead && markAsRead(notification._id)}
+                                    className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${!notification.isRead ? 'bg-primary-50' : ''
                                         }`}
                                 >
                                     <div className="flex items-start space-x-4">
@@ -215,27 +217,26 @@ const Notifications = () => {
 
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h4 className={`font-medium ${!notification.read ? 'text-gray-900' : 'text-gray-700'}`}>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={`text-sm ${!notification.isRead ? 'font-semibold text-gray-900' : 'text-gray-700'}`}>
                                                         {notification.title}
-                                                    </h4>
-                                                    <p className="text-sm text-gray-600 mt-1">
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-1 truncate">
                                                         {notification.message}
                                                     </p>
-                                                    <p className="text-xs text-gray-400 mt-2">
+                                                    <p className="text-xs text-gray-400 mt-1">
                                                         {formatTimeAgo(notification.createdAt)}
                                                     </p>
                                                 </div>
-
-                                                {!notification.read && (
-                                                    <span className="w-3 h-3 bg-primary-500 rounded-full flex-shrink-0 mt-1"></span>
+                                                {!notification.isRead && (
+                                                    <span className="w-2 h-2 bg-primary-500 rounded-full flex-shrink-0 mt-2"></span>
                                                 )}
                                             </div>
 
                                             <div className="flex items-center space-x-4 mt-3">
-                                                {!notification.read && (
+                                                {!notification.isRead && (
                                                     <button
-                                                        onClick={() => markAsRead(notification._id)}
+                                                        onClick={(e) => { e.stopPropagation(); markAsRead(notification._id); }}
                                                         className="text-sm text-primary-600 hover:text-primary-700 font-medium"
                                                     >
                                                         Mark as read

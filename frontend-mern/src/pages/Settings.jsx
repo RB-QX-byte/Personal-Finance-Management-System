@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
-  const { user, checkAuth } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -55,7 +55,6 @@ const Settings = () => {
     try {
       await api.put('/profile', profileData);
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      checkAuth();
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update profile' });
       console.error('Error updating profile:', error);
@@ -102,7 +101,7 @@ const Settings = () => {
 
   const handleExportData = async () => {
     try {
-      const response = await api.get('/export/data', { responseType: 'blob' });
+      const response = await api.get('/tax/export', { responseType: 'blob' });
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -133,8 +132,8 @@ const Settings = () => {
         {/* Message Alert */}
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg animate-fade-in ${message.type === 'success'
-              ? 'bg-success-100 text-success-700 border border-success-200'
-              : 'bg-danger-100 text-danger-700 border border-danger-200'
+            ? 'bg-success-100 text-success-700 border border-success-200'
+            : 'bg-danger-100 text-danger-700 border border-danger-200'
             }`}>
             <div className="flex items-center">
               <span className="mr-2">{message.type === 'success' ? '✓' : '✕'}</span>

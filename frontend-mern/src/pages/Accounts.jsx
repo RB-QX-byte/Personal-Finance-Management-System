@@ -18,9 +18,9 @@ const Accounts = () => {
   const accountTypes = [
     { value: 'checking', label: 'Checking Account' },
     { value: 'savings', label: 'Savings Account' },
-    { value: 'credit_card', label: 'Credit Card' },
+    { value: 'credit', label: 'Credit Card' },
     { value: 'investment', label: 'Investment Account' },
-    { value: 'loan', label: 'Loan' },
+    { value: 'cash', label: 'Cash' },
     { value: 'other', label: 'Other' }
   ];
 
@@ -301,8 +301,8 @@ const Accounts = () => {
                         type="button"
                         onClick={() => setFormData({ ...formData, icon })}
                         className={`w-10 h-10 text-xl rounded-md border-2 transition-colors ${formData.icon === icon
-                            ? 'border-primary-500 bg-primary-50'
-                            : 'border-gray-200 hover:border-gray-300'
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200 hover:border-gray-300'
                           }`}
                       >
                         {icon}
